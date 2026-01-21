@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Communications - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📧 Communications</h1>
+        <p>Envoyez des emails et messages WhatsApp aux patients</p>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="actions" style="margin-bottom: 30px;">
+        <a href="{{ url_for('contacts') }}" class="btn">← Retour aux Contacts</a>
+        {% if user_role in ['admin', 'super_admin'] %}
+        <a href="{{ url_for('send_bulk_communication') }}" class="btn btn-primary">📤 Envoi Groupé</a>
+        {% endif %}
+    </div>
+
+    <!-- Templates disponibles -->
+    <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3>📝 Templates Disponibles</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+            {% for template_key, template_data in templates.items() %}
+            <div style="border: 1px solid #ddd; padding: 15px; border-radius: 5px;">
+                <strong>{{ template_data.sujet }}</strong>
+                <p style="font-size: 0.85em; color: #666; margin-top: 5px;">
+                    {{ template_data.corps[:100] }}...
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Historique récent -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h3 style="margin-bottom: 20px;">📜 Historique Récent</h3>
+        {% if historique %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <th style="padding: 12px 15px; text-align: left; font-weight: 600; color: #495057;">Patient</th>
+                        <th style="padding: 12px 15px; text-align: center; font-weight: 600; color: #495057; width: 100px;">Type</th>
+                        <th style="padding: 12px 15px; text-align: left; font-weight: 600; color: #495057;">Destinataire</th>
+                        <th style="padding: 12px 15px; text-align: left; font-weight: 600; color: #495057;">Sujet</th>
+                        <th style="padding: 12px 15px; text-align: center; font-weight: 600; color: #495057; width: 110px;">Statut</th>
+                        <th style="padding: 12px 15px; text-align: left; font-weight: 600; color: #495057; width: 160px;">Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comm in historique %}
+                    <tr style="border-bottom: 1px solid #e9ecef; transition: background 0.2s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+                        <td style="padding: 12px 15px;">
+                            <a href="{{ url_for('communication_history', nom=comm.contact_nom) }}" style="color: #007bff; text-decoration: none; font-weight: 500;">
+                                {{ comm.contact_nom }}
+                            </a>
+                        </td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            {% if comm.type == 'email' %}
+                                <span style="background: #e3f2fd; color: #1976d2; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">📧 Email</span>
+                            {% else %}
+                                <span style="background: #e8f5e9; color: #388e3c; padding: 4px 10px; border-radius: 12px; font-size: 0.85em; font-weight: 500;">💬 WhatsApp</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 15px; color: #6c757d; font-size: 0.9em;">{{ comm.destinataire }}</td>
+                        <td style="padding: 12px 15px; color: #495057;">{{ comm.sujet or '-' }}</td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            {% if comm.statut == 'envoyé' %}
+                                <span style="background: #d4edda; color: #155724; padding: 5px 12px; border-radius: 12px; font-weight: 500; font-size: 0.85em; display: inline-block;">✓ Envoyé</span>
+                            {% else %}
+                                <span style="background: #f8d7da; color: #721c24; padding: 5px 12px; border-radius: 12px; font-weight: 500; font-size: 0.85em; display: inline-block;">✗ {{ comm.statut }}</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 15px; color: #6c757d; font-size: 0.9em;">{{ comm.date_envoi }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 8px;">
+            <div style="font-size: 3em; margin-bottom: 15px; opacity: 0.3;">📭</div>
+            <p style="color: #6c757d; font-size: 1.1em; margin: 0;">Aucune communication envoyée pour le moment.</p>
+            <p style="color: #adb5bd; font-size: 0.9em; margin-top: 5px;">Les emails et messages WhatsApp apparaîtront ici.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

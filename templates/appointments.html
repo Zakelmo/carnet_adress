@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Rendez-vous - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📅 Gestion des Rendez-vous</h1>
+    <p class="subtitle">Consultez et gérez vos rendez-vous</p>
+</div>
+
+<div class="appointments-actions">
+    <a href="{{ url_for('book_appointment') }}" class="btn btn-primary">
+        ➕ Réserver un nouveau RDV
+    </a>
+</div>
+
+{% if appointments %}
+<div class="appointments-grid">
+    {% for apt in appointments %}
+    <div class="appointment-card {% if apt.statut == 'annulé' %}cancelled{% endif %}">
+        <div class="appointment-header">
+            <div class="appointment-date">
+                <span class="date-icon">📅</span>
+                <div>
+                    <div class="date-main">{{ apt.date_rdv }}</div>
+                    <div class="time-range">{{ apt.heure_debut }} - {{ apt.heure_fin }}</div>
+                </div>
+            </div>
+            <span class="status-badge status-{{ apt.statut }}">
+                {% if apt.statut == 'confirmé' %}✓ Confirmé
+                {% elif apt.statut == 'annulé' %}✗ Annulé
+                {% else %}{{ apt.statut }}
+                {% endif %}
+            </span>
+        </div>
+        
+        <div class="appointment-body">
+            <div class="info-row">
+                <strong>👤 Patient:</strong>
+                <span>{{ apt.contact_nom }}</span>
+            </div>
+            
+            {% if apt.contact_email %}
+            <div class="info-row">
+                <strong>📧 Email:</strong>
+                <span>{{ apt.contact_email }}</span>
+            </div>
+            {% endif %}
+            
+            {% if apt.contact_telephone %}
+            <div class="info-row">
+                <strong>📱 Téléphone:</strong>
+                <span>{{ apt.contact_telephone }}</span>
+            </div>
+            {% endif %}
+            
+            {% if apt.motif %}
+            <div class="info-row">
+                <strong>📋 Motif:</strong>
+                <span>{{ apt.motif }}</span>
+            </div>
+            {% endif %}
+            
+            {% if apt.notes %}
+            <div class="info-row">
+                <strong>📝 Notes:</strong>
+                <span>{{ apt.notes }}</span>
+            </div>
+            {% endif %}
+            
+            {% if user_role in ['admin', 'super_admin'] %}
+            <div class="info-row">
+                <strong>👨‍💼 Créé par:</strong>
+                <span>{{ apt.created_by }}</span>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% if apt.statut != 'annulé' %}
+        <div class="appointment-footer">
+            <form method="POST" action="{{ url_for('cancel_appointment', appointment_id=apt.id) }}" 
+                  onsubmit="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?');"
+                  style="margin: 0;">
+                <button type="submit" class="btn btn-danger btn-sm">
+                    🗑️ Annuler le RDV
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-icon">📅</div>
+    <h3>Aucun rendez-vous</h3>
+    <p>Vous n'avez pas encore de rendez-vous planifiés.</p>
+    <a href="{{ url_for('book_appointment') }}" class="btn btn-primary">
+        Réserver votre premier RDV
+    </a>
+</div>
+{% endif %}
+
+<style>
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.page-header h1 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #7f8c8d;
+    font-size: 16px;
+}
+
+.appointments-actions {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.appointments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+    .appointments-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.appointment-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border-left: 5px solid #3498db;
+}
+
+.appointment-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+
+.appointment-card.cancelled {
+    opacity: 0.7;
+    border-left-color: #95a5a6;
+}
+
+.appointment-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.appointment-date {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.date-icon {
+    font-size: 32px;
+}
+
+.date-main {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.time-range {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-top: 5px;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.status-confirmé {
+    background: rgba(40, 167, 69, 0.2);
+    border: 1px solid rgba(40, 167, 69, 0.5);
+}
+
+.status-annulé {
+    background: rgba(220, 53, 69, 0.2);
+    border: 1px solid rgba(220, 53, 69, 0.5);
+}
+
+.appointment-body {
+    padding: 20px;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #ecf0f1;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-row strong {
+    color: #34495e;
+    flex-shrink: 0;
+    margin-right: 15px;
+}
+
+.info-row span {
+    color: #7f8c8d;
+    text-align: right;
+    word-break: break-word;
+}
+
+.appointment-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #ecf0f1;
+    text-align: right;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c0392b;
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #7f8c8d;
+    margin-bottom: 30px;
+}
+</style>
+{% endblock %}

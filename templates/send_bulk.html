@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Envoi Groupé - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📤 Envoi Groupé</h1>
+        <p>Envoyer des communications à plusieurs patients (Admin/Super Admin uniquement)</p>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('communications') }}" class="btn">← Retour</a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" id="bulkForm">
+            <!-- Type de communication -->
+            <div class="form-group">
+                <label for="type">Type de communication: *</label>
+                <select name="type" id="type" required onchange="updateForm()">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="email">📧 Email</option>
+                    <option value="whatsapp">💬 WhatsApp</option>
+                </select>
+            </div>
+
+            <!-- Sélection des contacts -->
+            <div class="form-group">
+                <label>Sélectionner les patients: *</label>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; max-height: 300px; overflow-y: auto;">
+                    <div style="margin-bottom: 10px;">
+                        <label>
+                            <input type="checkbox" id="selectAll" onchange="toggleAllContacts()">
+                            <strong>Tout sélectionner ({{ contacts|length }} patients)</strong>
+                        </label>
+                    </div>
+                    <hr style="margin: 10px 0;">
+                    {% for contact in contacts %}
+                    <div style="margin: 8px 0;">
+                        <label>
+                            <input type="checkbox" name="contacts[]" value="{{ contact.nom }}" class="contact-checkbox">
+                            <strong>{{ contact.nom }}</strong> - 
+                            <span style="font-size: 0.9em; color: #666;">
+                                {{ contact.email }} | {{ contact.telephone }}
+                            </span>
+                        </label>
+                    </div>
+                    {% endfor %}
+                </div>
+                <small id="selectedCount" style="color: #666;">0 patient(s) sélectionné(s)</small>
+            </div>
+
+            <!-- Sujet (Email seulement) -->
+            <div class="form-group" id="sujetGroup" style="display: none;">
+                <label for="sujet">Sujet: *</label>
+                <input type="text" id="sujet" name="sujet">
+            </div>
+
+            <!-- Message -->
+            <div class="form-group">
+                <label for="message">Message: *</label>
+                <textarea id="message" name="message" rows="10" required></textarea>
+            </div>
+
+            <!-- Templates suggérés -->
+            <div class="form-group">
+                <label>Templates suggérés (cliquez pour insérer):</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+                    {% for template_key, template_data in templates.items() %}
+                    <button type="button" class="btn" onclick="insertTemplate('{{ template_key }}')">
+                        {{ template_data.sujet }}
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h4>⚠️ Attention - Envoi Groupé</h4>
+                <ul style="margin-left: 20px; line-height: 1.8;">
+                    <li>Vérifiez bien votre message avant l'envoi</li>
+                    <li>L'envoi groupé peut prendre du temps selon le nombre de destinataires</li>
+                    <li>Les échecs d'envoi individuels seront signalés dans le rapport</li>
+                    <li>Respectez les limites d'envoi configurées pour éviter le blocage</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" onclick="return confirm('Confirmer l\'envoi à tous les patients sélectionnés ?')">
+                    📤 Envoyer
+                </button>
+                <a href="{{ url_for('communications') }}" class="btn">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+var templates = {{ templates|tojson }};
+
+function updateForm() {
+    var type = document.getElementById('type').value;
+    var sujetGroup = document.getElementById('sujetGroup');
+    var sujetInput = document.getElementById('sujet');
+    
+    if (type === 'email') {
+        sujetGroup.style.display = 'block';
+        sujetInput.required = true;
+    } else {
+        sujetGroup.style.display = 'none';
+        sujetInput.required = false;
+    }
+}
+
+function toggleAllContacts() {
+    var selectAll = document.getElementById('selectAll');
+    var checkboxes = document.querySelectorAll('.contact-checkbox');
+    
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectAll.checked;
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    var checkboxes = document.querySelectorAll('.contact-checkbox:checked');
+    document.getElementById('selectedCount').textContent = checkboxes.length + ' patient(s) sélectionné(s)';
+}
+
+// Mettre à jour le compteur quand on coche/décoche
+document.addEventListener('DOMContentLoaded', function() {
+    var checkboxes = document.querySelectorAll('.contact-checkbox');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.addEventListener('change', updateSelectedCount);
+    });
+});
+
+function insertTemplate(templateKey) {
+    var template = templates[templateKey];
+    if (template) {
+        var type = document.getElementById('type').value;
+        
+        if (type === 'email') {
+            document.getElementById('sujet').value = template.sujet;
+            document.getElementById('message').value = template.corps;
+        } else {
+            document.getElementById('message').value = template.corps;
+        }
+    }
+}
+</script>
+{% endblock %}

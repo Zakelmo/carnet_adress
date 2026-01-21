@@ -1,0 +1,555 @@
+{% extends "base.html" %}
+
+{% set categorie = contact.categorie or 'Patient' %}
+
+{% block title %}
+{% if categorie == 'Patient' %}
+Modifier un Patient - Cabinet Médical
+{% elif categorie == 'Pharmacie' %}
+Modifier une Pharmacie - Cabinet Médical
+{% elif categorie == 'Laboratoire' %}
+Modifier un Laboratoire - Cabinet Médical
+{% elif categorie == 'Assurance' %}
+Modifier une Assurance - Cabinet Médical
+{% elif categorie == 'Fournisseur' %}
+Modifier un Fournisseur - Cabinet Médical
+{% elif categorie == 'Partenaire' %}
+Modifier un Partenaire - Cabinet Médical
+{% else %}
+Modifier un Contact - Cabinet Médical
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>
+            {% if categorie == 'Patient' %}
+            ✏️ Modifier un Patient
+            {% elif categorie == 'Pharmacie' %}
+            ✏️ Modifier une Pharmacie
+            {% elif categorie == 'Laboratoire' %}
+            ✏️ Modifier un Laboratoire
+            {% elif categorie == 'Assurance' %}
+            ✏️ Modifier une Assurance
+            {% elif categorie == 'Fournisseur' %}
+            ✏️ Modifier un Fournisseur
+            {% elif categorie == 'Partenaire' %}
+            ✏️ Modifier un Partenaire
+            {% else %}
+            ✏️ Modifier un Contact
+            {% endif %}
+        </h1>
+        <a href="{{ url_for('contacts') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('edit_contact', nom=contact.nom) }}">
+            <h3>Informations de Base</h3>
+            
+            {% if user_role == 'user' %}
+            <!-- USER: Champs en lecture seule (ne peut pas modifier l'identité) -->
+            <div class="alert alert-info" style="margin-bottom: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px;">
+                <strong>ℹ️ Information :</strong> 
+                {% if categorie == 'Patient' %}
+                Vous ne pouvez modifier que vos informations médicales.
+                {% else %}
+                Vous ne pouvez modifier que vos informations.
+                {% endif %}
+                Pour modifier votre nom, email, téléphone ou catégorie, contactez un administrateur.
+            </div>
+            
+            <div class="form-group">
+                <label for="categorie">📁 Catégorie</label>
+                <input type="text" value="{{ contact.categorie or 'Patient' }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+            </div>
+            
+            <div class="form-group">
+                <label for="nom">
+                    {% if categorie == 'Patient' %}
+                    👤 Nom Complet
+                    {% elif categorie == 'Pharmacie' %}
+                    💊 Nom de la Pharmacie
+                    {% elif categorie == 'Laboratoire' %}
+                    🔬 Nom du Laboratoire
+                    {% elif categorie == 'Assurance' %}
+                    🛡️ Nom de l'Assurance
+                    {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                    🏢 Nom de l'Organisation
+                    {% else %}
+                    👤 Nom
+                    {% endif %}
+                </label>
+                <input type="text" id="nom" name="nom" value="{{ contact.nom }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">📧 Email</label>
+                <input type="email" id="email" name="email" value="{{ contact.email }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+            </div>
+            
+            <div class="form-group">
+                <label for="telephone">📱 Téléphone</label>
+                <input type="tel" id="telephone" name="telephone" value="{{ contact.telephone }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+            </div>
+            {% else %}
+            <!-- ADMIN/SUPER_ADMIN: Champs modifiables -->
+            <div class="form-group">
+                <label for="categorie">📁 Catégorie *</label>
+                <select id="categorie" name="categorie" required>
+                    <option value="Patient" {% if contact.categorie == 'Patient' %}selected{% endif %}>👤 Patient</option>
+                    <option value="Pharmacie" {% if contact.categorie == 'Pharmacie' %}selected{% endif %}>💊 Pharmacie</option>
+                    <option value="Fournisseur" {% if contact.categorie == 'Fournisseur' %}selected{% endif %}>📦 Fournisseur</option>
+                    <option value="Partenaire" {% if contact.categorie == 'Partenaire' %}selected{% endif %}>🤜 Partenaire</option>
+                    <option value="Laboratoire" {% if contact.categorie == 'Laboratoire' %}selected{% endif %}>🔬 Laboratoire</option>
+                    <option value="Assurance" {% if contact.categorie == 'Assurance' %}selected{% endif %}>🛡️ Assurance</option>
+                    <option value="Entreprise" {% if contact.categorie == 'Entreprise' %}selected{% endif %}>🏢 Entreprise</option>
+                    <option value="Client" {% if contact.categorie == 'Client' %}selected{% endif %}>💼 Client</option>
+                    <option value="Autre" {% if contact.categorie == 'Autre' %}selected{% endif %}>📋 Autre</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="nom" id="nom-label">
+                    {% if categorie == 'Patient' %}
+                    👤 Nom Complet *
+                    {% elif categorie == 'Pharmacie' %}
+                    💊 Nom de la Pharmacie *
+                    {% elif categorie == 'Laboratoire' %}
+                    🔬 Nom du Laboratoire *
+                    {% elif categorie == 'Assurance' %}
+                    🛡️ Nom de l'Assurance *
+                    {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                    🏢 Nom de l'Organisation *
+                    {% else %}
+                    👤 Nom *
+                    {% endif %}
+                </label>
+                <input type="text" id="nom" name="nom" value="{{ contact.nom }}" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">📧 Email *</label>
+                <input type="email" id="email" name="email" value="{{ contact.email }}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="telephone">📱 Téléphone *</label>
+                <input type="tel" id="telephone" name="telephone" value="{{ contact.telephone }}" required placeholder="+212606060606">
+                <small>Format international recommandé pour WhatsApp</small>
+            </div>
+            
+            <hr style="margin: 30px 0;" id="professional-section-divider">
+            
+            <div id="professional-section">
+                <h3>
+                    {% if categorie == 'Patient' %}
+                    Informations Professionnelles (Optionnel)
+                    {% elif categorie == 'Pharmacie' %}
+                    Informations de la Pharmacie (Optionnel)
+                    {% elif categorie == 'Laboratoire' %}
+                    Informations du Laboratoire (Optionnel)
+                    {% elif categorie == 'Assurance' %}
+                    Informations de l'Assurance (Optionnel)
+                    {% else %}
+                    Informations Professionnelles (Optionnel)
+                    {% endif %}
+                </h3>
+                
+                <div class="form-group">
+                    <label for="titre_poste" id="titre-poste-label">
+                        {% if categorie == 'Patient' %}
+                        💼 Profession
+                        {% elif categorie == 'Pharmacie' %}
+                        👨‍⚕️ Pharmacien Responsable
+                        {% elif categorie == 'Laboratoire' %}
+                        👨‍🔬 Directeur/Responsable
+                        {% elif categorie == 'Assurance' %}
+                        👤 Responsable de Compte
+                        {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                        💼 Personne de Contact / Poste
+                        {% else %}
+                        💼 Titre du Poste
+                        {% endif %}
+                    </label>
+                    <input type="text" id="titre_poste" name="titre_poste" value="{{ contact.titre_poste or '' }}" 
+                           placeholder="{% if categorie == 'Pharmacie' %}Ex: Dr. Mohammed Alami{% elif categorie == 'Laboratoire' %}Ex: Dr. Sarah Bennani{% else %}{% endif %}">
+                </div>
+            
+                <div class="form-group" id="entreprise-group">
+                    <label for="entreprise" id="entreprise-label">
+                        {% if categorie == 'Patient' %}
+                        🏢 Employeur
+                        {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                        🏢 Nom de l'Entreprise
+                        {% else %}
+                        🏢 Organisation
+                        {% endif %}
+                    </label>
+                    <input type="text" id="entreprise" name="entreprise" value="{{ contact.entreprise or '' }}">
+                </div>
+            </div>
+            
+            <hr style="margin: 30px 0;">
+            
+            <h3>
+                {% if categorie in ['Pharmacie', 'Laboratoire', 'Assurance', 'Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                Adresse & Localisation (Optionnel)
+                {% else %}
+                Adresse (Optionnel)
+                {% endif %}
+            </h3>
+            
+            <div class="form-group">
+                <label for="adresse">🏠 Adresse</label>
+                <input type="text" id="adresse" name="adresse" value="{{ contact.adresse or '' }}">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="ville">🏙️ Ville</label>
+                    <input type="text" id="ville" name="ville" value="{{ contact.ville or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="code_postal">📮 Code Postal</label>
+                    <input type="text" id="code_postal" name="code_postal" value="{{ contact.code_postal or '' }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="pays">🌍 Pays</label>
+                <input type="text" id="pays" name="pays" value="{{ contact.pays or 'Maroc' }}">
+            </div>
+            {% endif %}
+            
+            <hr style="margin: 30px 0;" id="medical-section-divider">
+            
+            <div id="medical-section">
+                <h3 id="medical-section-title">Informations Médicales (Optionnel)</h3>
+                
+                <div class="form-group" id="field_date_naissance">
+                    <label for="date_naissance"><span id="label_date_naissance">🎂 Date de Naissance</span></label>
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group" id="field_groupe_sanguin">
+                    <label for="groupe_sanguin">🩸 Groupe Sanguin</label>
+                    <select id="groupe_sanguin" name="groupe_sanguin">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="A+" {% if contact.groupe_sanguin == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if contact.groupe_sanguin == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if contact.groupe_sanguin == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if contact.groupe_sanguin == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if contact.groupe_sanguin == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if contact.groupe_sanguin == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if contact.groupe_sanguin == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if contact.groupe_sanguin == 'O-' %}selected{% endif %}>O-</option>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="field_numero_secu">
+                    <label for="numero_secu"><span id="label_numero_secu">🔢 Numéro de Sécurité Sociale</span></label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50">
+                </div>
+                
+                <div class="form-group" id="field_allergies">
+                    <label for="allergies"><span id="label_allergies">⚠️ Allergies</span></label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Pénicilline, Arachides, etc.">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group" id="field_notes">
+                    <label for="notes"><span id="label_notes">📝 Notes Médicales</span></label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations médicales additionnelles...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            <div id="notes-only-section" style="display: none;">
+                <h3>Notes (Optionnel)</h3>
+                <div class="form-group">
+                    <label for="notes_general">📝 Notes</label>
+                    <textarea id="notes_general" name="notes" rows="4" placeholder="Informations additionnelles...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">✓ Enregistrer les Modifications</button>
+                <a href="{{ url_for('contacts') }}" class="btn btn-secondary">✗ Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorieSelect = document.getElementById('categorie');
+    const medicalSection = document.getElementById('medical-section');
+    const medicalDivider = document.getElementById('medical-section-divider');
+    const notesOnlySection = document.getElementById('notes-only-section');
+    
+    // Fonction pour mettre à jour les labels selon la catégorie
+    function updateLabels(categorie) {
+        if (!categorieSelect) return; // Si USER (champs en lecture seule)
+        
+        const nomLabel = document.getElementById('nom-label');
+        const titrePosteLabel = document.getElementById('titre-poste-label');
+        const entrepriseLabel = document.getElementById('entreprise-label');
+        const professionalSection = document.querySelector('#professional-section h3');
+        
+        // Mettre à jour le label du nom
+        if (nomLabel) {
+            switch(categorie) {
+                case 'Patient':
+                    nomLabel.innerHTML = '👤 Nom Complet *';
+                    break;
+                case 'Pharmacie':
+                    nomLabel.innerHTML = '💊 Nom de la Pharmacie *';
+                    break;
+                case 'Laboratoire':
+                    nomLabel.innerHTML = '🔬 Nom du Laboratoire *';
+                    break;
+                case 'Assurance':
+                    nomLabel.innerHTML = '🛡️ Nom de l\'Assurance *';
+                    break;
+                case 'Entreprise':
+                case 'Client':
+                case 'Fournisseur':
+                case 'Partenaire':
+                    nomLabel.innerHTML = '🏢 Nom de l\'Organisation *';
+                    break;
+                default:
+                    nomLabel.innerHTML = '👤 Nom *';
+            }
+        }
+        
+        // Mettre à jour le label du titre/poste
+        if (titrePosteLabel) {
+            switch(categorie) {
+                case 'Patient':
+                    titrePosteLabel.innerHTML = '💼 Profession';
+                    break;
+                case 'Pharmacie':
+                    titrePosteLabel.innerHTML = '👨‍⚕️ Pharmacien Responsable';
+                    break;
+                case 'Laboratoire':
+                    titrePosteLabel.innerHTML = '👨‍🔬 Directeur/Responsable';
+                    break;
+                case 'Assurance':
+                    titrePosteLabel.innerHTML = '👤 Responsable de Compte';
+                    break;
+                case 'Entreprise':
+                case 'Client':
+                case 'Fournisseur':
+                case 'Partenaire':
+                    titrePosteLabel.innerHTML = '💼 Personne de Contact / Poste';
+                    break;
+                default:
+                    titrePosteLabel.innerHTML = '💼 Titre du Poste';
+            }
+        }
+        
+        // Mettre à jour le label de l'entreprise
+        if (entrepriseLabel) {
+            switch(categorie) {
+                case 'Patient':
+                    entrepriseLabel.innerHTML = '🏢 Employeur';
+                    break;
+                case 'Entreprise':
+                case 'Client':
+                case 'Fournisseur':
+                case 'Partenaire':
+                    entrepriseLabel.innerHTML = '🏢 Nom de l\'Entreprise';
+                    break;
+                default:
+                    entrepriseLabel.innerHTML = '🏢 Organisation';
+            }
+        }
+        
+        // Mettre à jour le titre de la section professionnelle
+        if (professionalSection) {
+            switch(categorie) {
+                case 'Patient':
+                    professionalSection.textContent = 'Informations Professionnelles (Optionnel)';
+                    break;
+                case 'Pharmacie':
+                    professionalSection.textContent = 'Informations de la Pharmacie (Optionnel)';
+                    break;
+                case 'Laboratoire':
+                    professionalSection.textContent = 'Informations du Laboratoire (Optionnel)';
+                    break;
+                case 'Assurance':
+                    professionalSection.textContent = 'Informations de l\'Assurance (Optionnel)';
+                    break;
+                default:
+                    professionalSection.textContent = 'Informations Professionnelles (Optionnel)';
+            }
+        }
+    }
+    
+    // Fonction pour réutiliser intelligemment les champs selon la catégorie
+    function updateFieldsForCategory(categorie) {
+        if (!categorieSelect) return;
+        
+        const medicalSectionTitle = document.getElementById('medical-section-title');
+        const labelDateNaissance = document.getElementById('label_date_naissance');
+        const labelNumeroSecu = document.getElementById('label_numero_secu');
+        const labelAllergies = document.getElementById('label_allergies');
+        const labelNotes = document.getElementById('label_notes');
+        
+        const inputDateNaissance = document.getElementById('date_naissance');
+        const inputNumeroSecu = document.getElementById('numero_secu');
+        const textareaAllergies = document.getElementById('allergies');
+        const textareaNotes = document.getElementById('notes');
+        
+        const fieldGroupeSanguin = document.getElementById('field_groupe_sanguin');
+        
+        // Masquer toujours le groupe sanguin pour les non-patients
+        if (categorie !== 'Patient') {
+            fieldGroupeSanguin.style.display = 'none';
+        } else {
+            fieldGroupeSanguin.style.display = 'block';
+        }
+        
+        switch(categorie) {
+            case 'Patient':
+                medicalSectionTitle.textContent = 'Informations Médicales (Optionnel)';
+                labelDateNaissance.innerHTML = '🎂 Date de Naissance';
+                inputDateNaissance.type = 'date';
+                inputDateNaissance.placeholder = '';
+                labelNumeroSecu.innerHTML = '🔢 Numéro de Sécurité Sociale';
+                inputNumeroSecu.placeholder = '';
+                inputNumeroSecu.maxLength = 15;
+                labelAllergies.innerHTML = '⚠️ Allergies';
+                textareaAllergies.placeholder = 'Ex: Pénicilline, Arachides, etc.';
+                labelNotes.innerHTML = '📝 Notes Médicales';
+                textareaNotes.placeholder = 'Informations médicales additionnelles...';
+                break;
+                
+            case 'Pharmacie':
+                medicalSectionTitle.textContent = 'Informations Spécifiques Pharmacie';
+                labelDateNaissance.innerHTML = '🕐 Horaires d\'Ouverture';
+                inputDateNaissance.type = 'text';
+                inputDateNaissance.placeholder = 'Ex: Lun-Ven 8h-20h, Sam 9h-18h';
+                labelNumeroSecu.innerHTML = '📜 N° Licence/Agrément';
+                inputNumeroSecu.placeholder = 'Numéro d\'autorisation officiel';
+                inputNumeroSecu.maxLength = 50;
+                labelAllergies.innerHTML = '💊 Services Disponibles';
+                textareaAllergies.placeholder = 'Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Informations complémentaires sur la pharmacie...';
+                break;
+                
+            case 'Laboratoire':
+                medicalSectionTitle.textContent = 'Informations Spécifiques Laboratoire';
+                labelDateNaissance.innerHTML = '⏱️ Délai de Résultats';
+                inputDateNaissance.type = 'text';
+                inputDateNaissance.placeholder = 'Ex: 24h pour analyses standard, 48h pour biologie';
+                labelNumeroSecu.innerHTML = '🏅 N° d\'Accréditation';
+                inputNumeroSecu.placeholder = 'Numéro d\'accréditation COFRAC ou équivalent';
+                inputNumeroSecu.maxLength = 50;
+                labelAllergies.innerHTML = '🔬 Spécialités & Analyses';
+                textareaAllergies.placeholder = 'Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Informations complémentaires, horaires, modalités de prélèvement...';
+                break;
+                
+            case 'Assurance':
+                medicalSectionTitle.textContent = 'Informations Contrat & Couverture';
+                labelDateNaissance.innerHTML = '📅 Date d\'Adhésion';
+                inputDateNaissance.type = 'date';
+                inputDateNaissance.placeholder = '';
+                labelNumeroSecu.innerHTML = '📋 N° Police/Contrat';
+                inputNumeroSecu.placeholder = 'Numéro de contrat ou police d\'assurance';
+                inputNumeroSecu.maxLength = 50;
+                labelAllergies.innerHTML = '🛡️ Type de Couverture';
+                textareaAllergies.placeholder = 'Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Garanties spécifiques, exclusions, procédures de remboursement...';
+                break;
+                
+            case 'Fournisseur':
+                medicalSectionTitle.textContent = 'Informations Commerciales';
+                labelDateNaissance.innerHTML = '📅 Date de Début Collaboration';
+                inputDateNaissance.type = 'date';
+                inputDateNaissance.placeholder = '';
+                labelNumeroSecu.innerHTML = '🏢 N° SIRET/RC';
+                inputNumeroSecu.placeholder = 'Numéro d\'identification fiscale';
+                inputNumeroSecu.maxLength = 50;
+                labelAllergies.innerHTML = '📦 Produits/Services Fournis';
+                textareaAllergies.placeholder = 'Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Conditions de paiement, délais de livraison, tarifs négociés...';
+                break;
+                
+            case 'Partenaire':
+                medicalSectionTitle.textContent = 'Informations Partenariat';
+                labelDateNaissance.innerHTML = '📅 Date de Début Partenariat';
+                inputDateNaissance.type = 'date';
+                inputDateNaissance.placeholder = '';
+                labelNumeroSecu.innerHTML = '📜 N° Convention/Accord';
+                inputNumeroSecu.placeholder = 'Référence de la convention ou accord';
+                inputNumeroSecu.maxLength = 50;
+                labelAllergies.innerHTML = '🤝 Type de Partenariat';
+                textareaAllergies.placeholder = 'Ex: Référencement mutuel, Co-marketing, Échange de services, R&D';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Termes du partenariat, objectifs communs, engagements...';
+                break;
+                
+            case 'Entreprise':
+            case 'Client':
+                medicalSectionTitle.textContent = 'Informations Commerciales';
+                labelDateNaissance.innerHTML = '📅 Date de Début Relation';
+                inputDateNaissance.type = 'date';
+                inputDateNaissance.placeholder = '';
+                labelNumeroSecu.innerHTML = '🏢 N° SIRET/Client';
+                inputNumeroSecu.placeholder = 'Numéro d\'identification';
+                inputNumeroSecu.maxLength = 50;
+                labelAllergies.innerHTML = '🏭 Secteur d\'Activité';
+                textareaAllergies.placeholder = 'Ex: Santé, Technologie, Commerce, Services, Industrie';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Besoins spécifiques, historique des transactions, préférences...';
+                break;
+                
+            default:
+                medicalSectionTitle.textContent = 'Informations Complémentaires';
+                labelNotes.innerHTML = '📝 Notes';
+                textareaNotes.placeholder = 'Informations additionnelles...';
+        }
+    }
+    
+    // Fonction pour afficher/masquer les sections selon la catégorie
+    function updateSectionsVisibility() {
+        if (!categorieSelect) return; // Si USER (champs en lecture seule)
+        
+        const categorie = categorieSelect.value;
+        
+        // Mettre à jour les labels
+        updateLabels(categorie);
+        
+        // Mettre à jour les champs selon la catégorie
+        updateFieldsForCategory(categorie);
+        
+        if (categorie === 'Patient') {
+            // Patient: Afficher toutes les informations médicales
+            medicalSection.style.display = 'block';
+            medicalDivider.style.display = 'block';
+            notesOnlySection.style.display = 'none';
+        } else {
+            // Autres catégories: Afficher la section médicale avec les champs réutilisés
+            medicalSection.style.display = 'block';
+            medicalDivider.style.display = 'block';
+            notesOnlySection.style.display = 'none';
+        }
+    }
+    
+    // Initialiser au chargement de la page
+    updateSectionsVisibility();
+    
+    // Écouter les changements de catégorie
+    if (categorieSelect) {
+        categorieSelect.addEventListener('change', updateSectionsVisibility);
+    }
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier un Utilisateur - Carnet d'Adresses{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>✏️ Modifier l'Utilisateur: {{ target_username }}</h1>
+        <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('edit_user', target_username=target_username) }}">
+            <div class="form-group">
+                <label for="username">👤 Nom d'utilisateur</label>
+                <input type="text" id="username" value="{{ target_username }}" disabled class="form-control-disabled">
+                <small>Le nom d'utilisateur ne peut pas être modifié</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">🔑 Nouveau mot de passe (laisser vide pour ne pas modifier)</label>
+                <input type="password" id="password" name="password" minlength="8">
+                <small>Minimum 8 caractères (sécurité renforcée)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="role">🎭 Rôle</label>
+                <select id="role" name="role" class="form-select">
+                    {% for role in available_roles %}
+                    <option value="{{ role }}" {% if role == target_role %}selected{% endif %}>
+                        {{ Role.get_role_name(role) }}
+                    </option>
+                    {% endfor %}
+                    {% if target_role not in available_roles %}
+                    <option value="{{ target_role }}" selected disabled>
+                        {{ Role.get_role_name(target_role) }} (Pas de permission de modifier)
+                    </option>
+                    {% endif %}
+                </select>
+                <small>
+                    {% if user_role == 'admin' %}
+                    ⚠️ Vous ne pouvez pas modifier le rôle des super administrateurs.
+                    {% endif %}
+                </small>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">✓ Enregistrer</button>
+                <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">✗ Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

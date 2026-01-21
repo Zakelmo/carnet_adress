@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Catégories - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📁 Catégories de Contacts</h1>
+        <p>Vos contacts organisés par catégorie</p>
+    </div>
+
+    <div class="actions" style="margin-bottom: 30px;">
+        <a href="{{ url_for('contacts') }}" class="btn btn-secondary">← Retour aux Contacts</a>
+        <a href="{{ url_for('add_contact') }}" class="btn btn-success">➕ Ajouter un Contact</a>
+    </div>
+
+    <!-- Vue d'ensemble des catégories -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+        {% for cat_name, info in category_info.items() %}
+        {% set count = category_counts.get(cat_name, 0) %}
+        {% if count > 0 %}
+        <a href="#{{ cat_name }}" style="text-decoration: none;">
+            <div style="background: linear-gradient(135deg, {{ info.color }} 0%, {{ info.color }}dd 100%); color: white; padding: 25px; border-radius: 12px; text-align: center; transition: transform 0.3s, box-shadow 0.3s; cursor: pointer;"
+                 onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 16px rgba(0,0,0,0.2)'"
+                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                <div style="font-size: 3em; margin-bottom: 10px;">{{ info.icon }}</div>
+                <h3 style="margin: 0; color: white;">{{ cat_name }}</h3>
+                <p style="margin: 10px 0 0 0; font-size: 1.8em; font-weight: bold; opacity: 0.95;">{{ count }}</p>
+                <small style="opacity: 0.9;">contact{% if count > 1 %}s{% endif %}</small>
+            </div>
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- Liste détaillée par catégorie -->
+    {% for cat_name, contacts in categories_data.items() %}
+    {% set info = category_info.get(cat_name, {'icon': '📋', 'color': '#6c757d'}) %}
+    <div id="{{ cat_name }}" style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px; border-left: 5px solid {{ info.color }};">
+        <div style="display: flex; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid {{ info.color }};">
+            <div style="font-size: 2.5em; margin-right: 15px;">{{ info.icon }}</div>
+            <div>
+                <h2 style="margin: 0; color: {{ info.color }};">{{ cat_name }}</h2>
+                <p style="margin: 5px 0 0 0; color: #6c757d;">{{ contacts|length }} contact{% if contacts|length > 1 %}s{% endif %}</p>
+            </div>
+        </div>
+
+        {% if cat_name == 'Patient' %}
+        <!-- Vue spéciale pour les patients -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+            {% for contact in contacts %}
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 3px solid {{ info.color }};">
+                <h4 style="margin: 0 0 10px 0; color: #333;">
+                    <a href="{{ url_for('edit_contact', nom=contact.nom) }}" style="color: {{ info.color }}; text-decoration: none;">
+                        {{ contact.nom }}
+                    </a>
+                </h4>
+                <p style="margin: 5px 0; font-size: 0.9em; color: #6c757d;">
+                    📧 {{ contact.email }}<br>
+                    📱 {{ contact.telephone }}
+                    {% if contact.ville %}
+                    <br>🏙️ {{ contact.ville }}
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif cat_name == 'Pharmacie' %}
+        <!-- Vue spéciale pour les pharmacies -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            {% for contact in contacts %}
+            <div style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); padding: 20px; border-radius: 10px; border: 2px solid #4caf50;">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 2em; margin-right: 10px;">💊</div>
+                    <h3 style="margin: 0; color: #2e7d32;">
+                        <a href="{{ url_for('edit_contact', nom=contact.nom) }}" style="color: #2e7d32; text-decoration: none;">
+                            {{ contact.nom }}
+                        </a>
+                    </h3>
+                </div>
+                <p style="margin: 5px 0; color: #1b5e20;">
+                    📧 {{ contact.email }}<br>
+                    📱 {{ contact.telephone }}<br>
+                    {% if contact.ville %}
+                    🏙️ {{ contact.ville }}<br>
+                    {% endif %}
+                </p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #81c784;">
+                    <a href="{{ url_for('send_email', nom=contact.nom) }}" class="btn" style="background: #4caf50; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9em;">
+                        📧 Commander
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif cat_name == 'Laboratoire' %}
+        <!-- Vue spéciale pour les laboratoires -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            {% for contact in contacts %}
+            <div style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); padding: 20px; border-radius: 10px; border: 2px solid #00bcd4;">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 2em; margin-right: 10px;">🔬</div>
+                    <h3 style="margin: 0; color: #006064;">
+                        <a href="{{ url_for('edit_contact', nom=contact.nom) }}" style="color: #006064; text-decoration: none;">
+                            {{ contact.nom }}
+                        </a>
+                    </h3>
+                </div>
+                <p style="margin: 5px 0; color: #00838f;">
+                    {% if contact.entreprise %}
+                    🏢 {{ contact.entreprise }}<br>
+                    {% endif %}
+                    📧 {{ contact.email }}<br>
+                    📱 {{ contact.telephone }}<br>
+                    {% if contact.ville %}
+                    🏙️ {{ contact.ville }}
+                    {% endif %}
+                </p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #4dd0e1;">
+                    <a href="{{ url_for('send_email', nom=contact.nom) }}" class="btn" style="background: #00bcd4; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9em;">
+                        📧 Contacter
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <!-- Vue standard pour les autres catégories -->
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa; border-bottom: 2px solid {{ info.color }};">
+                        <th style="padding: 12px; text-align: left;">Nom</th>
+                        {% if cat_name in ['Fournisseur', 'Partenaire'] %}
+                        <th style="padding: 12px; text-align: left;">Entreprise</th>
+                        <th style="padding: 12px; text-align: left;">Poste</th>
+                        {% endif %}
+                        <th style="padding: 12px; text-align: left;">Email</th>
+                        <th style="padding: 12px; text-align: left;">Téléphone</th>
+                        <th style="padding: 12px; text-align: left;">Ville</th>
+                        <th style="padding: 12px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in contacts %}
+                    <tr style="border-bottom: 1px solid #e9ecef;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='white'">
+                        <td style="padding: 12px;">
+                            <a href="{{ url_for('edit_contact', nom=contact.nom) }}" style="color: {{ info.color }}; text-decoration: none; font-weight: 500;">
+                                {{ contact.nom }}
+                            </a>
+                        </td>
+                        {% if cat_name in ['Fournisseur', 'Partenaire'] %}
+                        <td style="padding: 12px; color: #6c757d;">{{ contact.entreprise or '-' }}</td>
+                        <td style="padding: 12px; color: #6c757d;">{{ contact.titre_poste or '-' }}</td>
+                        {% endif %}
+                        <td style="padding: 12px; color: #6c757d; font-size: 0.9em;">{{ contact.email }}</td>
+                        <td style="padding: 12px; color: #6c757d; font-size: 0.9em;">{{ contact.telephone }}</td>
+                        <td style="padding: 12px; color: #6c757d;">{{ contact.ville or '-' }}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <a href="{{ url_for('send_email', nom=contact.nom) }}" style="color: #007bff; text-decoration: none; margin-right: 10px;" title="Envoyer email">📧</a>
+                            <a href="{{ url_for('send_whatsapp', nom=contact.nom) }}" style="color: #28a745; text-decoration: none;" title="Envoyer WhatsApp">💬</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if not categories_data %}
+    <div style="text-align: center; padding: 60px 20px; background: #f8f9fa; border-radius: 12px;">
+        <div style="font-size: 4em; margin-bottom: 20px; opacity: 0.3;">📁</div>
+        <h3 style="color: #6c757d;">Aucun contact pour le moment</h3>
+        <p style="color: #adb5bd;">Commencez par ajouter des contacts pour voir les catégories.</p>
+        <a href="{{ url_for('add_contact') }}" class="btn btn-success" style="margin-top: 20px;">➕ Ajouter un Contact</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

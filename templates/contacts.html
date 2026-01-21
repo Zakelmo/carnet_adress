@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Patients - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        {% if user_role == 'user' %}
+        <h1>📋 Mes Informations</h1>
+        {% else %}
+        <h1>👥 Mes Patients</h1>
+        {% endif %}
+        <div>
+            {% if user_role in ['admin', 'super_admin'] %}
+            <a href="{{ url_for('communications') }}" class="btn btn-info">📧 Communications</a>
+            <a href="{{ url_for('add_contact') }}" class="btn btn-success">➕ Ajouter un patient</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if user_role in ['admin', 'super_admin'] %}
+    <div class="search-box">
+        <form method="GET" action="{{ url_for('contacts') }}">
+            <input type="text" name="search" placeholder="🔍 Rechercher un patient..." value="{{ search or '' }}">
+            <button type="submit" class="btn btn-primary">Rechercher</button>
+            {% if search %}
+            <a href="{{ url_for('contacts') }}" class="btn btn-secondary">🔄 Tout afficher</a>
+            {% endif %}
+        </form>
+    </div>
+    {% endif %}
+    
+    {% if contacts %}
+    <div class="contacts-count">
+        <p>📊 {{ contacts|length }} patient(s) {% if search %}trouvé(s){% endif %}</p>
+    </div>
+    
+    <div class="contacts-grid">
+        {% for contact in contacts %}
+        <div class="contact-card">
+            <div class="contact-header">
+                <h3>👤 {{ contact.nom }}</h3>
+            </div>
+            <div class="contact-body">
+                <p><strong>📧 Email:</strong> {{ contact.email }}</p>
+                <p><strong>📱 Téléphone:</strong> {{ contact.telephone }}</p>
+                {% if contact.date_naissance %}
+                <p><strong>🎂 Date de naissance:</strong> {{ contact.date_naissance }}</p>
+                {% endif %}
+                {% if contact.groupe_sanguin %}
+                <p><strong>🩸 Groupe sanguin:</strong> {{ contact.groupe_sanguin }}</p>
+                {% endif %}
+                {% if contact.allergies %}
+                <p><strong>⚠️ Allergies:</strong> <span style="color: #d9534f;">{{ contact.allergies }}</span></p>
+                {% endif %}
+            </div>
+            <div class="contact-footer" style="display: flex; flex-wrap: wrap; gap: 5px;">
+                {% if user_role == 'user' %}
+                <!-- USER peut seulement modifier ses infos médicales -->
+                <a href="{{ url_for('edit_contact', nom=contact.nom) }}" class="btn btn-warning btn-sm">✏️ Modifier mes infos</a>
+                {% else %}
+                <!-- ADMIN/SUPER_ADMIN ont accès complet -->
+                <a href="{{ url_for('edit_contact', nom=contact.nom) }}" class="btn btn-warning btn-sm">✏️ Modifier</a>
+                <a href="{{ url_for('send_email', nom=contact.nom) }}" class="btn btn-email btn-sm">📧 Email</a>
+                <a href="{{ url_for('send_whatsapp', nom=contact.nom) }}" class="btn btn-success btn-sm">💬 WhatsApp</a>
+                <a href="{{ url_for('communication_history', nom=contact.nom) }}" class="btn btn-secondary btn-sm">📜 Historique</a>
+                <a href="{{ url_for('delete_contact', nom=contact.nom) }}" 
+                   class="btn btn-danger btn-sm"
+                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce patient?')">
+                   ➖ Supprimer
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📭 {% if search %}Aucun patient trouvé pour "{{ search }}"{% else %}Votre liste de patients est vide{% endif %}</p>
+        {% if not search %}
+        <a href="{{ url_for('add_contact') }}" class="btn btn-success">➕ Ajouter votre premier patient</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

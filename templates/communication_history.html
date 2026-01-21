@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Historique Communications - {{ contact_nom }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📜 Historique des Communications</h1>
+        <p>Patient: <strong>{{ contact_nom }}</strong></p>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('contacts') }}" class="btn">← Retour aux Contacts</a>
+        <a href="{{ url_for('communications') }}" class="btn">📧 Communications</a>
+    </div>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        {% if historique %}
+        <h3>Total: {{ historique|length }} communication(s)</h3>
+        
+        {% for comm in historique %}
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; background: #f8f9fa;">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                <div>
+                    <h4 style="margin: 0;">
+                        {% if comm.type == 'email' %}
+                            📧 Email
+                        {% else %}
+                            💬 WhatsApp
+                        {% endif %}
+                    </h4>
+                    <p style="margin: 5px 0; color: #666;">
+                        <strong>À:</strong> {{ comm.destinataire }}
+                    </p>
+                </div>
+                <div style="text-align: right;">
+                    <span style="padding: 5px 10px; border-radius: 5px; font-size: 0.85em; font-weight: 500;
+                        {% if comm.statut == 'envoyé' %}
+                            background: #d4edda; color: #155724;
+                        {% else %}
+                            background: #f8d7da; color: #721c24;
+                        {% endif %}
+                    ">
+                        {% if comm.statut == 'envoyé' %}
+                            ✓ Envoyé
+                        {% else %}
+                            ✗ {{ comm.statut }}
+                        {% endif %}
+                    </span>
+                    <p style="margin: 5px 0; font-size: 0.85em; color: #666;">
+                        {{ comm.date_envoi }}
+                    </p>
+                    <p style="margin: 5px 0; font-size: 0.85em; color: #666;">
+                        Par: {{ comm.sent_by or 'Système' }}
+                    </p>
+                </div>
+            </div>
+
+            {% if comm.sujet %}
+            <div style="margin-bottom: 10px;">
+                <strong>Sujet:</strong> {{ comm.sujet }}
+            </div>
+            {% endif %}
+
+            <div style="background: white; padding: 10px; border-radius: 5px; border-left: 3px solid #007bff;">
+                <strong>Message:</strong>
+                <p style="margin-top: 5px; white-space: pre-wrap;">{{ comm.message }}</p>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% else %}
+        <div style="text-align: center; padding: 40px; color: #666;">
+            <p style="font-size: 1.2em;">Aucune communication trouvée pour ce patient.</p>
+            <p>Commencez par envoyer un email ou un message WhatsApp.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

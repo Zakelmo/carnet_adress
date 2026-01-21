@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Créer un Utilisateur - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>➕ Créer un Nouvel Utilisateur</h1>
+        <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('create_user') }}" id="createUserForm">
+            <div class="form-group">
+                <label for="username">👤 Nom d'utilisateur *</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">🔑 Mot de passe *</label>
+                <input type="password" id="password" name="password" required minlength="8">
+                <small>Minimum 8 caractères (sécurité renforcée)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="role">🎭 Rôle *</label>
+                <select id="role" name="role" required class="form-select" onchange="togglePatientFields()">
+                    {% for role in available_roles %}
+                    <option value="{{ role }}">
+                        {{ Role.get_role_name(role) }}
+                        {% if role == 'user' %}(Par défaut){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+                <small>
+                    {% if user_role == 'admin' %}
+                    ⚠️ En tant qu'administrateur, vous ne pouvez créer que des utilisateurs normaux.
+                    {% else %}
+                    ℹ️ Choisissez le niveau d'accès approprié.
+                    {% endif %}
+                </small>
+            </div>
+            
+            <!-- Section Patient (visible uniquement pour le rôle USER) -->
+            <div id="patientSection" style="display: block;">
+                <hr style="margin: 30px 0;">
+                <h3>🏥 Informations du Patient</h3>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>⚠️ Règle Importante:</strong> Pour créer un compte utilisateur normal, le patient doit déjà être enregistré dans le système.
+                    <br><small>Les informations ci-dessous doivent correspondre exactement à un patient existant.</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="patient_selector">Sélectionner un patient existant:</label>
+                    <select id="patient_selector" class="form-select" onchange="fillPatientInfo()">
+                        <option value="">-- Sélectionner un patient --</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient.nom }}|{{ patient.email }}|{{ patient.telephone }}">
+                            {{ patient.nom }} ({{ patient.email }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small>Ou remplissez les champs manuellement ci-dessous</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="patient_nom">👤 Nom du Patient *</label>
+                    <input type="text" id="patient_nom" name="patient_nom" class="patient-field">
+                    <small>Doit correspondre exactement au nom dans le système</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="patient_email">📧 Email du Patient *</label>
+                    <input type="email" id="patient_email" name="patient_email" class="patient-field">
+                    <small>Doit correspondre exactement à l'email dans le système</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="patient_telephone">📱 Téléphone du Patient *</label>
+                    <input type="tel" id="patient_telephone" name="patient_telephone" class="patient-field">
+                    <small>Doit correspondre exactement au téléphone dans le système</small>
+                </div>
+            </div>
+            
+            <div class="role-description">
+                <h3>Description des rôles:</h3>
+                <ul>
+                    <li><strong>👤 Utilisateur:</strong> Peut gérer ses propres contacts (patients) uniquement. Doit être associé à un patient existant.</li>
+                    <li><strong>👮 Administrateur:</strong> Peut créer des utilisateurs, gérer tous les patients, envoyer des communications groupées</li>
+                    <li><strong>⚡ Super Administrateur:</strong> Contrôle total sur l'application et la base de données</li>
+                </ul>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">✓ Créer l'utilisateur</button>
+                <a href="{{ url_for('admin_panel') }}" class="btn btn-secondary">✗ Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function togglePatientFields() {
+    var role = document.getElementById('role').value;
+    var patientSection = document.getElementById('patientSection');
+    var patientFields = document.querySelectorAll('.patient-field');
+    
+    if (role === 'user') {
+        patientSection.style.display = 'block';
+        // Rendre les champs obligatoires
+        patientFields.forEach(function(field) {
+            field.required = true;
+        });
+    } else {
+        patientSection.style.display = 'none';
+        // Rendre les champs optionnels
+        patientFields.forEach(function(field) {
+            field.required = false;
+            field.value = '';
+        });
+        document.getElementById('patient_selector').value = '';
+    }
+}
+
+function fillPatientInfo() {
+    var selector = document.getElementById('patient_selector');
+    var selectedValue = selector.value;
+    
+    if (selectedValue) {
+        var parts = selectedValue.split('|');
+        if (parts.length === 3) {
+            document.getElementById('patient_nom').value = parts[0];
+            document.getElementById('patient_email').value = parts[1];
+            document.getElementById('patient_telephone').value = parts[2];
+        }
+    } else {
+        document.getElementById('patient_nom').value = '';
+        document.getElementById('patient_email').value = '';
+        document.getElementById('patient_telephone').value = '';
+    }
+}
+
+// Initialiser l'affichage au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    togglePatientFields();
+});
+</script>
+{% endblock %}

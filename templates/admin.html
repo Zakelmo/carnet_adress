@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Panneau Admin - Carnet d'Adresses{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>👥 Panneau d'Administration</h1>
+        <a href="{{ url_for('create_user') }}" class="btn btn-success">➕ Créer un utilisateur</a>
+    </div>
+    
+    <div class="admin-info">
+        <p><strong>Nombre total d'utilisateurs:</strong> {{ users|length }}</p>
+        <p><strong>Votre rôle:</strong> 
+            {% if user_role == 'super_admin' %}
+            <span class="role-badge super-admin">Super Administrateur</span>
+            {% else %}
+            <span class="role-badge admin">Administrateur</span>
+            {% endif %}
+        </p>
+    </div>
+    
+    {% if users %}
+    <div class="users-table-container">
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>👤 Nom d'utilisateur</th>
+                    <th>🎭 Rôle</th>
+                    <th>⚙️ Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr {% if user.username == username %}class="current-user"{% endif %}>
+                    <td>
+                        {{ user.username }}
+                        {% if user.username == username %}<strong>(Vous)</strong>{% endif %}
+                    </td>
+                    <td>
+                        {% if user.role == 'super_admin' %}
+                        <span class="role-badge super-admin">{{ user.role_name }}</span>
+                        {% elif user.role == 'admin' %}
+                        <span class="role-badge admin">{{ user.role_name }}</span>
+                        {% else %}
+                        <span class="role-badge user">{{ user.role_name }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions-cell">
+                        {% if user.username != username %}
+                            {% if user_role == 'super_admin' or (user_role == 'admin' and user.role != 'super_admin') %}
+                            <a href="{{ url_for('edit_user', target_username=user.username) }}" 
+                               class="btn btn-warning btn-sm">✏️ Modifier</a>
+                            <a href="{{ url_for('delete_user', target_username=user.username) }}" 
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur?')">
+                               ➖ Supprimer
+                            </a>
+                            {% else %}
+                            <span class="text-muted">Pas de permission</span>
+                            {% endif %}
+                        {% else %}
+                        <a href="{{ url_for('profile') }}" class="btn btn-primary btn-sm">👤 Mon profil</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>📭 Aucun utilisateur trouvé</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Super Admin - Carnet d'Adresses{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>⚙️ Panneau Super Administrateur</h1>
+        <a href="{{ url_for('contacts') }}" class="btn btn-secondary">← Retour aux contacts</a>
+    </div>
+    
+    <div class="superadmin-dashboard">
+        <!-- Statistiques de la base de données -->
+        <div class="dashboard-section">
+            <h2>📊 Statistiques de la Base de Données</h2>
+            <div class="stats-grid">
+                <div class="stat-card-small">
+                    <div class="stat-icon">📇</div>
+                    <div class="stat-value">{{ db_stats.total }}</div>
+                    <div class="stat-label">Contacts Total</div>
+                </div>
+                
+                <div class="stat-card-small">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value">{{ total_users }}</div>
+                    <div class="stat-label">Utilisateurs</div>
+                </div>
+                
+                <div class="stat-card-small">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-value">{{ users_by_role.get('super_admin', 0) }}</div>
+                    <div class="stat-label">Super Admins</div>
+                </div>
+                
+                <div class="stat-card-small">
+                    <div class="stat-icon">👮</div>
+                    <div class="stat-value">{{ users_by_role.get('admin', 0) }}</div>
+                    <div class="stat-label">Administrateurs</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gestion de la base de données -->
+        <div class="dashboard-section danger-zone">
+            <h2>🗄️ Gestion de la Base de Données</h2>
+            
+            <div class="db-actions">
+                <div class="action-card">
+                    <h3>💾 Sauvegarde</h3>
+                    <p>Créer une copie de sauvegarde de la base de données</p>
+                    <a href="{{ url_for('backup_database') }}" class="btn btn-primary">
+                        💾 Créer une sauvegarde
+                    </a>
+                </div>
+                
+                <div class="action-card danger">
+                    <h3>⚠️ Zone Dangereuse</h3>
+                    <p><strong>ATTENTION:</strong> Cette action est irréversible!</p>
+                    <button type="button" class="btn btn-danger" onclick="showDeleteConfirmation()">
+                        🗑️ Effacer toute la base de données
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Répartition des contacts par utilisateur -->
+        <div class="dashboard-section">
+            <h2>📈 Répartition des Contacts</h2>
+            {% if db_stats.par_utilisateur %}
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Nombre de Contacts</th>
+                        <th>Pourcentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user, count in db_stats.par_utilisateur.items() %}
+                    <tr>
+                        <td>{{ user }}</td>
+                        <td>{{ count }}</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: {{ (count / db_stats.total * 100)|round(1) }}%"></div>
+                                <span class="progress-text">{{ (count / db_stats.total * 100)|round(1) }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="text-muted">Aucune donnée disponible</p>
+            {% endif %}
+        </div>
+        
+        <!-- Actions rapides -->
+        <div class="dashboard-section">
+            <h2>⚡ Actions Rapides</h2>
+            <div class="quick-actions">
+                <a href="{{ url_for('admin_panel') }}" class="action-btn">
+                    <span class="action-icon">👥</span>
+                    <span class="action-text">Gérer les utilisateurs</span>
+                </a>
+                <a href="{{ url_for('statistics') }}" class="action-btn">
+                    <span class="action-icon">📊</span>
+                    <span class="action-text">Voir les statistiques</span>
+                </a>
+                <a href="{{ url_for('create_user') }}" class="action-btn">
+                    <span class="action-icon">➕</span>
+                    <span class="action-text">Créer un utilisateur</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation de suppression -->
+<div id="deleteModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>⚠️ Confirmation Requise</h2>
+        <p><strong>ATTENTION:</strong> Vous êtes sur le point d'effacer TOUTES les données de la base de données!</p>
+        <p>Cette action est <strong>IRRÉVERSIBLE</strong>.</p>
+        <p>Pour confirmer, tapez exactement: <code>DELETE ALL DATA</code></p>
+        
+        <form method="POST" action="{{ url_for('clear_database') }}">
+            <div class="form-group">
+                <input type="text" name="confirmation" id="confirmationInput" 
+                       placeholder="Tapez DELETE ALL DATA" 
+                       class="form-control" required>
+            </div>
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-danger">🗑️ Confirmer la suppression</button>
+                <button type="button" class="btn btn-secondary" onclick="hideDeleteConfirmation()">✗ Annuler</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function showDeleteConfirmation() {
+    document.getElementById('deleteModal').style.display = 'flex';
+}
+
+function hideDeleteConfirmation() {
+    document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('confirmationInput').value = '';
+}
+
+// Fermer le modal en cliquant en dehors
+window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target == modal) {
+        hideDeleteConfirmation();
+    }
+}
+</script>
+{% endblock %}

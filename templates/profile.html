@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}Mon Profil - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>👤 Mon Profil</h1>
+        {% if user_role == 'user' %}
+        <a href="{{ url_for('patient_dashboard') }}" class="btn btn-secondary">← Retour au Dashboard</a>
+        {% else %}
+        <a href="{{ url_for('contacts') }}" class="btn btn-secondary">← Retour</a>
+        {% endif %}
+    </div>
+    
+    <div class="profile-container">
+        <div class="profile-info">
+            <h2>📋 Informations du Compte</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <strong>Nom d'utilisateur:</strong>
+                    <span>{{ username }}</span>
+                </div>
+                <div class="info-item">
+                    <strong>Rôle:</strong>
+                    {% if user_role == 'super_admin' %}
+                    <span class="role-badge super-admin">{{ role_name }}</span>
+                    {% elif user_role == 'admin' %}
+                    <span class="role-badge admin">{{ role_name }}</span>
+                    {% else %}
+                    <span class="role-badge user">{{ role_name }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if user_role == 'user' and patient %}
+        <!-- Section Informations Patient (pour USER uniquement) -->
+        {% set categorie = patient.categorie or 'Patient' %}
+        <div class="profile-actions">
+            <h2>
+                {% if categorie == 'Patient' %}
+                🏥 Mes Informations Patient
+                {% elif categorie == 'Pharmacie' %}
+                💊 Informations de la Pharmacie
+                {% elif categorie == 'Laboratoire' %}
+                🔬 Informations du Laboratoire
+                {% elif categorie == 'Assurance' %}
+                🛡️ Informations de l'Assurance
+                {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                🏢 Mes Informations Professionnelles
+                {% else %}
+                📋 Mes Informations
+                {% endif %}
+            </h2>
+            <form method="POST" action="{{ url_for('profile') }}">
+                <input type="hidden" name="action" value="patient_info">
+                
+                <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong>ℹ️ Information :</strong> 
+                    {% if categorie == 'Patient' %}
+                    Vous pouvez modifier vos informations médicales.
+                    {% else %}
+                    Vous pouvez modifier vos informations.
+                    {% endif %}
+                    Pour modifier votre nom, email ou téléphone, contactez l'administration.
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        {% if categorie == 'Patient' %}
+                        👤 Nom Complet
+                        {% elif categorie == 'Pharmacie' %}
+                        💊 Nom de la Pharmacie
+                        {% elif categorie == 'Laboratoire' %}
+                        🔬 Nom du Laboratoire
+                        {% elif categorie == 'Assurance' %}
+                        🛡️ Nom de l'Assurance
+                        {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+                        🏢 Nom de l'Organisation
+                        {% else %}
+                        👤 Nom
+                        {% endif %}
+                    </label>
+                    <input type="text" value="{{ patient.nom }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                </div>
+                
+                <div class="form-group">
+                    <label>📧 Email</label>
+                    <input type="email" value="{{ patient.email }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                </div>
+                
+                <div class="form-group">
+                    <label>📱 Téléphone</label>
+                    <input type="tel" value="{{ patient.telephone }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                </div>
+                
+                <hr style="margin: 30px 0;">
+                
+                {% if categorie == 'Patient' %}
+                <h3>Informations Médicales (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">🎂 Date de Naissance</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="groupe_sanguin">🩸 Groupe Sanguin</label>
+                    <select id="groupe_sanguin" name="groupe_sanguin">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="A+" {% if patient.groupe_sanguin == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if patient.groupe_sanguin == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if patient.groupe_sanguin == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if patient.groupe_sanguin == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if patient.groupe_sanguin == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if patient.groupe_sanguin == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if patient.groupe_sanguin == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if patient.groupe_sanguin == 'O-' %}selected{% endif %}>O-</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🔢 Numéro de Sécurité Sociale</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="15">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">⚠️ Allergies</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Pénicilline, Arachides, etc.">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes Médicales</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations médicales additionnelles...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% elif categorie == 'Pharmacie' %}
+                <h3>Informations Spécifiques Pharmacie (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">🕐 Horaires d'Ouverture</label>
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}" placeholder="Ex: Lun-Ven 8h-20h, Sam 9h-18h">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">📜 N° Licence/Agrément</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'autorisation officiel">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">💊 Services Disponibles</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires sur la pharmacie...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% elif categorie == 'Laboratoire' %}
+                <h3>Informations Spécifiques Laboratoire (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">⏱️ Délai de Résultats</label>
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}" placeholder="Ex: 24h pour analyses standard, 48h pour biologie">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🏅 N° d'Accréditation</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'accréditation COFRAC ou équivalent">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🔬 Spécialités & Analyses</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires, horaires, modalités de prélèvement...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% elif categorie == 'Assurance' %}
+                <h3>Informations Contrat & Couverture (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date d'Adhésion</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">📋 N° Police/Contrat</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro de contrat ou police d'assurance">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🛡️ Type de Couverture</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Garanties spécifiques, exclusions, procédures de remboursement...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% elif categorie == 'Fournisseur' %}
+                <h3>Informations Commerciales (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date de Début Collaboration</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🏢 N° SIRET/RC</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification fiscale">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">📦 Produits/Services Fournis</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Conditions de paiement, délais de livraison, tarifs négociés...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% elif categorie == 'Partenaire' %}
+                <h3>Informations Partenariat (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date de Début Partenariat</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">📜 N° Convention/Accord</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Référence de la convention ou accord">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🤝 Type de Partenariat</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Référencement mutuel, Co-marketing, Échange de services, R&D">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Termes du partenariat, objectifs communs, engagements...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% elif categorie in ['Entreprise', 'Client'] %}
+                <h3>Informations Commerciales (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date de Début Relation</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🏢 N° SIRET/Client</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🏭 Secteur d'Activité</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Santé, Technologie, Commerce, Services, Industrie">{{ patient.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Besoins spécifiques, historique des transactions, préférences...">{{ patient.notes or '' }}</textarea>
+                </div>
+                
+                {% else %}
+                <h3>Informations Complémentaires (Modifiables)</h3>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="6" placeholder="Ajoutez ici toutes les informations importantes...">{{ patient.notes or '' }}</textarea>
+                </div>
+                {% endif %}
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">✓ Mettre à jour mes informations</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        
+        <div class="profile-actions">
+            <h2>🔑 Modifier le Mot de Passe</h2>
+            <form method="POST" action="{{ url_for('profile') }}">
+                <input type="hidden" name="action" value="password">
+                
+                <div class="form-group">
+                    <label for="new_password">Nouveau mot de passe *</label>
+                    <input type="password" id="new_password" name="new_password" required minlength="8">
+                    <small>Minimum 8 caractères (sécurité renforcée)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirmer le mot de passe *</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success">✓ Changer le mot de passe</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

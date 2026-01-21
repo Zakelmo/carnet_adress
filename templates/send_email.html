@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Envoyer Email - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header">
+        <h1>📧 Envoyer un Email</h1>
+        <p>Envoyer un email à {{ contact.nom }}</p>
+    </div>
+
+    <div class="actions">
+        <a href="{{ url_for('contacts') }}" class="btn">← Retour aux Contacts</a>
+    </div>
+
+    <div class="form-container">
+        <form method="POST" id="emailForm">
+            <!-- Informations du destinataire -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3>Destinataire</h3>
+                <p><strong>Nom:</strong> {{ contact.nom }}</p>
+                <p><strong>Email:</strong> {{ contact.email }}</p>
+            </div>
+
+            <!-- Choix: Template ou Message personnalisé -->
+            <div class="form-group">
+                <label>Mode d'envoi:</label>
+                <select name="mode" id="modeSelect" onchange="toggleMode()">
+                    <option value="custom">Message personnalisé</option>
+                    <option value="template">Utiliser un template</option>
+                </select>
+            </div>
+
+            <!-- Section Message personnalisé -->
+            <div id="customSection">
+                <div class="form-group">
+                    <label for="sujet">Sujet: *</label>
+                    <input type="text" id="sujet" name="sujet" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Message: *</label>
+                    <textarea id="message" name="message" rows="10" required></textarea>
+                </div>
+            </div>
+
+            <!-- Section Template -->
+            <div id="templateSection" style="display: none;">
+                <div class="form-group">
+                    <label for="template">Choisir un template:</label>
+                    <select name="template" id="templateSelect" onchange="previewTemplate()">
+                        <option value="">-- Sélectionner --</option>
+                        <option value="rappel_rdv">Rappel de rendez-vous</option>
+                        <option value="resultats">Résultats d'examens</option>
+                        <option value="confirmation">Confirmation de rendez-vous</option>
+                        <option value="information">Information importante</option>
+                    </select>
+                </div>
+
+                <!-- Variables pour les templates -->
+                <div id="templateVars" style="display: none;">
+                    <div class="form-group">
+                        <label for="date">Date du rendez-vous:</label>
+                        <input type="date" id="date" name="date">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="heure">Heure du rendez-vous:</label>
+                        <input type="time" id="heure" name="heure">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="custom_message">Message personnalisé (optionnel):</label>
+                        <textarea id="custom_message" name="custom_message" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <!-- Aperçu du template -->
+                <div id="templatePreview" style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; display: none;">
+                    <h4>Aperçu:</h4>
+                    <div id="previewContent" style="white-space: pre-wrap;"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">📧 Envoyer Email</button>
+                <a href="{{ url_for('contacts') }}" class="btn">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function toggleMode() {
+    var mode = document.getElementById('modeSelect').value;
+    var customSection = document.getElementById('customSection');
+    var templateSection = document.getElementById('templateSection');
+    
+    if (mode === 'custom') {
+        customSection.style.display = 'block';
+        templateSection.style.display = 'none';
+        document.getElementById('sujet').required = true;
+        document.getElementById('message').required = true;
+    } else {
+        customSection.style.display = 'none';
+        templateSection.style.display = 'block';
+        document.getElementById('sujet').required = false;
+        document.getElementById('message').required = false;
+    }
+}
+
+function previewTemplate() {
+    var template = document.getElementById('templateSelect').value;
+    var templateVars = document.getElementById('templateVars');
+    var preview = document.getElementById('templatePreview');
+    
+    if (template) {
+        templateVars.style.display = 'block';
+        preview.style.display = 'block';
+        
+        // Afficher un aperçu basique
+        var templates = {{ templates|tojson }};
+        var selectedTemplate = templates[template];
+        if (selectedTemplate) {
+            var previewText = "Sujet: " + selectedTemplate.sujet + "\n\n" + selectedTemplate.corps;
+            previewText = previewText.replace('{nom}', '{{ contact.nom }}');
+            previewText = previewText.replace('{cabinet_name}', 'Cabinet Médical');
+            previewText = previewText.replace('{date}', '[DATE]');
+            previewText = previewText.replace('{heure}', '[HEURE]');
+            previewText = previewText.replace('{message}', '[VOTRE MESSAGE]');
+            document.getElementById('previewContent').textContent = previewText;
+        }
+    } else {
+        templateVars.style.display = 'none';
+        preview.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

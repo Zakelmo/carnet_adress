@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - Carnet d'Adresses{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <h1>🔐 Connexion</h1>
+        
+        {% if session.get('show_register_hint') %}
+        <div class="alert alert-info" style="margin-bottom: 20px; padding: 15px; background: #d1ecf1; border-radius: 5px;">
+            <strong>Première visite?</strong><br>
+            Aucun utilisateur trouvé. Créez le premier Super Administrateur pour commencer.
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group">
+                <label for="username">👤 Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">🔑 Mot de passe</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">✓ Se connecter</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>Pas encore de compte?</p>
+            <a href="{{ url_for('register') }}" class="btn btn-secondary">📝 Créer un compte</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

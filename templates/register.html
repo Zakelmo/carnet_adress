@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Inscription - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        {% if is_first_user %}
+        <h1>🔐 Initialisation du Système</h1>
+        <div class="alert alert-info" style="margin-bottom: 20px; padding: 15px; background: #d1ecf1; border-radius: 5px;">
+            <strong>Aucun utilisateur trouvé!</strong><br>
+            Créez le premier <strong>Super Administrateur</strong> pour initialiser le système.
+        </div>
+        {% else %}
+        <h1>📝 Créer un Compte Patient</h1>
+        <div class="alert alert-info" style="margin-bottom: 20px; padding: 15px; background: #d1ecf1; border-radius: 5px;">
+            <strong>🏥 Patients du Cabinet</strong><br>
+            Si vous êtes déjà enregistré(e) comme patient, vous pouvez créer un compte pour accéder à vos informations en ligne.
+        </div>
+        {% endif %}
+        
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="form-group">
+                <label for="username">👤 Nom d'utilisateur</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">🔑 Mot de passe</label>
+                <input type="password" id="password" name="password" required minlength="8">
+                <small>Minimum 8 caractères (sécurité renforcée)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm">🔑 Confirmer le mot de passe</label>
+                <input type="password" id="confirm" name="confirm" required minlength="8">
+            </div>
+            
+            {% if is_first_user %}
+            <div class="alert alert-warning" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+                ⚠️ <strong>Important:</strong>
+                <ul style="margin: 10px 0 0 20px; text-align: left;">
+                    <li>Ce compte aura <strong>tous les privilèges</strong></li>
+                    <li>Choisissez un mot de passe <strong>fort</strong></li>
+                    <li>Notez vos identifiants dans un <strong>endroit sûr</strong></li>
+                    <li>Vous pourrez créer d'autres comptes après connexion</li>
+                </ul>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">✓ Créer le Super Administrateur</button>
+            {% else %}
+            <!-- Section Patient Info (pour auto-inscription) -->
+            <hr style="margin: 30px 0;">
+            <h3 style="margin-bottom: 15px;">🏥 Vérification Patient</h3>
+            <div class="alert alert-warning" style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
+                ⚠️ <strong>Informations Requises:</strong><br>
+                Pour créer votre compte, vous devez être déjà enregistré(e) comme patient dans notre système.
+                Entrez vos informations <strong>exactement</strong> comme elles apparaissent dans nos dossiers.
+            </div>
+            
+            <div class="form-group">
+                <label for="patient_nom">👤 Votre Nom Complet *</label>
+                <input type="text" id="patient_nom" name="patient_nom" required>
+                <small>Tel qu'enregistré au cabinet (ex: Jean Dupont)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="patient_email">📧 Votre Email *</label>
+                <input type="email" id="patient_email" name="patient_email" required>
+                <small>L'email enregistré dans votre dossier patient</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="patient_telephone">📱 Votre Téléphone *</label>
+                <input type="tel" id="patient_telephone" name="patient_telephone" required>
+                <small>Format: +212606060606 ou 0612345678</small>
+            </div>
+            
+            <div class="alert alert-info" style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px;">
+                <strong>ℹ️ Pas encore patient?</strong><br>
+                Si vous n'êtes pas encore enregistré(e) dans notre système, veuillez contacter le cabinet pour prendre rendez-vous.
+                Un compte pourra être créé après votre première visite.
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="margin-top: 20px;">✓ Créer mon Compte</button>
+            {% endif %}
+        </form>
+        
+        <div class="auth-footer">
+            <p>Déjà un compte?</p>
+            <a href="{{ url_for('login') }}" class="btn btn-secondary">🔐 Se connecter</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

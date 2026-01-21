@@ -1,0 +1,419 @@
+{% extends "base.html" %}
+
+{% block title %}Réserver un Rendez-vous - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>📅 Réserver un Rendez-vous</h1>
+    <p class="subtitle">Choisissez une date et un créneau horaire disponible</p>
+</div>
+
+<div class="appointment-container">
+    <form method="POST" action="{{ url_for('book_appointment') }}" id="appointmentForm">
+        <div class="form-grid">
+            <!-- Informations du contact -->
+            <div class="form-section">
+                <h3>👤 Informations du Patient</h3>
+                
+                {% if user_role == 'user' %}
+                <!-- Pour les patients, remplir automatiquement avec leur nom -->
+                <div class="form-group">
+                    <label for="contact_nom">Nom *</label>
+                    <input type="text" id="contact_nom" name="contact_nom" 
+                           value="{{ username }}" required readonly>
+                </div>
+                {% else %}
+                <!-- Pour les admins, permettre de choisir parmi les contacts -->
+                <div class="form-group">
+                    <label for="contact_nom">Patient *</label>
+                    <select id="contact_nom" name="contact_nom" required>
+                        <option value="">-- Sélectionnez un patient --</option>
+                        {% for contact in contacts %}
+                        <option value="{{ contact.nom }}" 
+                                data-email="{{ contact.email }}" 
+                                data-telephone="{{ contact.telephone }}">
+                            {{ contact.nom }} ({{ contact.email }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="contact_email">Email</label>
+                    <input type="email" id="contact_email" name="contact_email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contact_telephone">Téléphone</label>
+                    <input type="tel" id="contact_telephone" name="contact_telephone">
+                </div>
+                
+                <div class="form-group">
+                    <label for="motif">Motif du rendez-vous</label>
+                    <input type="text" id="motif" name="motif" 
+                           placeholder="Ex: Consultation générale, Contrôle...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">Notes additionnelles</label>
+                    <textarea id="notes" name="notes" rows="3" 
+                              placeholder="Informations complémentaires..."></textarea>
+                </div>
+            </div>
+            
+            <!-- Sélection de date et horaire -->
+            <div class="form-section">
+                <h3>🗓️ Date et Horaire</h3>
+                
+                <div class="form-group">
+                    <label for="date_rdv">Date du rendez-vous *</label>
+                    <input type="date" id="date_rdv" name="date_rdv" required 
+                           min="{{ min_date }}">
+                </div>
+                
+                <div id="slots-container" class="slots-container" style="display: none;">
+                    <label>Créneaux horaires disponibles (30 min) *</label>
+                    <div class="slots-info">
+                        <span class="legend">
+                            <span class="slot-available"></span> Disponible
+                            <span class="slot-taken"></span> Pris
+                            <span class="slot-selected"></span> Sélectionné
+                        </span>
+                    </div>
+                    <div id="time-slots" class="time-slots"></div>
+                    <input type="hidden" id="heure_debut" name="heure_debut" required>
+                </div>
+                
+                <div id="loading-slots" class="loading" style="display: none;">
+                    <p>⏳ Chargement des créneaux disponibles...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                ✅ Confirmer le Rendez-vous
+            </button>
+            <a href="{{ url_for('appointments') }}" class="btn btn-secondary">
+                ❌ Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+.appointment-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-section {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form-section h3 {
+    margin-top: 0;
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #34495e;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-group input[readonly] {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.slots-container {
+    margin-top: 20px;
+}
+
+.slots-info {
+    margin: 10px 0;
+    padding: 10px;
+    background: #fff;
+    border-radius: 5px;
+}
+
+.legend {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    align-items: center;
+}
+
+.legend span:before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-right: 5px;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.slot-available:before {
+    background: #28a745;
+}
+
+.slot-taken:before {
+    background: #dc3545;
+}
+
+.slot-selected:before {
+    background: #007bff;
+}
+
+.time-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.time-slot {
+    padding: 12px 8px;
+    text-align: center;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.time-slot.available {
+    background: #28a745;
+    color: white;
+    border-color: #28a745;
+}
+
+.time-slot.available:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.time-slot.taken {
+    background: #dc3545;
+    color: white;
+    border-color: #dc3545;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.time-slot.selected {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.btn-primary:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('date_rdv');
+    const slotsContainer = document.getElementById('slots-container');
+    const timeSlotsDiv = document.getElementById('time-slots');
+    const loadingDiv = document.getElementById('loading-slots');
+    const heureDebutInput = document.getElementById('heure_debut');
+    const submitBtn = document.getElementById('submitBtn');
+    const contactSelect = document.getElementById('contact_nom');
+    const emailInput = document.getElementById('contact_email');
+    const telephoneInput = document.getElementById('contact_telephone');
+    
+    // Définir la date minimale (aujourd'hui)
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('min', today);
+    
+    // Si admin, remplir automatiquement email et téléphone lors de la sélection
+    {% if user_role != 'user' %}
+    if (contactSelect) {
+        contactSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                emailInput.value = selectedOption.getAttribute('data-email') || '';
+                telephoneInput.value = selectedOption.getAttribute('data-telephone') || '';
+            } else {
+                emailInput.value = '';
+                telephoneInput.value = '';
+            }
+        });
+    }
+    {% endif %}
+    
+    // Charger les créneaux quand une date est sélectionnée
+    dateInput.addEventListener('change', function() {
+        const selectedDate = this.value;
+        if (selectedDate) {
+            loadAvailableSlots(selectedDate);
+        }
+    });
+    
+    function loadAvailableSlots(date) {
+        // Afficher le loader
+        loadingDiv.style.display = 'block';
+        slotsContainer.style.display = 'none';
+        timeSlotsDiv.innerHTML = '';
+        heureDebutInput.value = '';
+        submitBtn.disabled = true;
+        
+        // Appeler l'API pour récupérer les créneaux
+        fetch('{{ url_for("get_available_slots") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ date_rdv: date })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingDiv.style.display = 'none';
+            slotsContainer.style.display = 'block';
+            
+            // Générer tous les créneaux (8h00 - 18h00)
+            const allSlots = [];
+            for (let hour = 8; hour < 18; hour++) {
+                allSlots.push(`${hour.toString().padStart(2, '0')}:00`);
+                allSlots.push(`${hour.toString().padStart(2, '0')}:30`);
+            }
+            
+            // Créer les boutons pour chaque créneau
+            allSlots.forEach(slot => {
+                const slotBtn = document.createElement('div');
+                slotBtn.className = 'time-slot';
+                slotBtn.textContent = slot;
+                
+                if (data.taken_slots.includes(slot)) {
+                    slotBtn.classList.add('taken');
+                    slotBtn.title = 'Créneau déjà réservé';
+                } else {
+                    slotBtn.classList.add('available');
+                    slotBtn.title = 'Cliquez pour sélectionner';
+                    slotBtn.addEventListener('click', function() {
+                        // Retirer la sélection précédente
+                        document.querySelectorAll('.time-slot.selected').forEach(el => {
+                            el.classList.remove('selected');
+                            el.classList.add('available');
+                        });
+                        
+                        // Sélectionner ce créneau
+                        this.classList.remove('available');
+                        this.classList.add('selected');
+                        heureDebutInput.value = slot;
+                        submitBtn.disabled = false;
+                    });
+                }
+                
+                timeSlotsDiv.appendChild(slotBtn);
+            });
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            loadingDiv.style.display = 'none';
+            alert('Erreur lors du chargement des créneaux disponibles');
+        });
+    }
+});
+</script>
+{% endblock %}

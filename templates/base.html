@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Carnet d'Adresses{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        {% if 'username' in session %}
+        <nav class="navbar">
+            <div class="nav-brand">🏥 Cabinet Médical</div>
+            <div class="nav-items">
+                <span class="user-info">👤 {{ session['username'] }} 
+                    {% if session.get('role') == 'super_admin' %}
+                    <span class="role-badge super-admin">Super Admin</span>
+                    {% elif session.get('role') == 'admin' %}
+                    <span class="role-badge admin">Admin</span>
+                    {% else %}
+                    <span class="role-badge user">Patient</span>
+                    {% endif %}
+                </span>
+                
+                {% if session.get('role') == 'user' %}
+                <!-- Menu simplifié pour les patients -->
+                <a href="{{ url_for('patient_dashboard') }}" class="nav-link">🏠 Mon Espace</a>
+                <a href="{{ url_for('appointments') }}" class="nav-link">📅 Rendez-vous</a>
+                <a href="{{ url_for('profile') }}" class="nav-link">👤 Profil</a>
+                <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Déconnexion</a>
+                
+                {% else %}
+                <!-- Menu complet pour Admin/Super Admin -->
+                <a href="{{ url_for('contacts') }}" class="nav-link">📖 Contacts</a>
+                <a href="{{ url_for('categories') }}" class="nav-link">📁 Catégories</a>
+                <a href="{{ url_for('add_contact') }}" class="nav-link">➕ Ajouter</a>
+                <a href="{{ url_for('appointments') }}" class="nav-link">📅 Rendez-vous</a>
+                <a href="{{ url_for('communications') }}" class="nav-link">📧 Communications</a>
+                
+                {% if session.get('role') in ['admin', 'super_admin'] %}
+                <a href="{{ url_for('admin_panel') }}" class="nav-link admin-link">👥 Admin</a>
+                {% endif %}
+                
+                {% if session.get('role') == 'super_admin' %}
+                <a href="{{ url_for('superadmin_panel') }}" class="nav-link superadmin-link">⚙️ Super Admin</a>
+                {% endif %}
+                
+                <a href="{{ url_for('profile') }}" class="nav-link">👤 Profil</a>
+                <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Déconnexion</a>
+                {% endif %}
+            </div>
+        </nav>
+        {% endif %}
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <main>
+            {% block content %}{% endblock %}
+        </main>
+        
+        <footer>
+            <p>&copy; 2024 Cabinet Médical - Gestion des Patients</p>
+        </footer>
+    </div>
+</body>
+</html>

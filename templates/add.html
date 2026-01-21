@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Ajouter un Patient - Cabinet Médical{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-header">
+        <h1>➕ Ajouter un Patient</h1>
+        <a href="{{ url_for('contacts') }}" class="btn btn-secondary">← Retour</a>
+    </div>
+    
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('add_contact') }}">
+            <h3>Informations de Base</h3>
+            
+            <div class="form-group">
+                <label for="categorie">📁 Catégorie *</label>
+                <select id="categorie" name="categorie" required onchange="updateFormFields()">
+                    <option value="Patient" selected>👤 Patient</option>
+                    <option value="Pharmacie">💊 Pharmacie</option>
+                    <option value="Laboratoire">🔬 Laboratoire</option>
+                    <option value="Assurance">🛡️ Assurance</option>
+                    <option value="Entreprise">🏢 Entreprise</option>
+                    <option value="Client">💼 Client</option>
+                    <option value="Fournisseur">📦 Fournisseur</option>
+                    <option value="Partenaire">🤝 Partenaire</option>
+                    <option value="Autre">📋 Autre</option>
+                </select>
+                <small id="categoryHelp" style="color: #666; display: block; margin-top: 5px;">
+                    Informations patient avec dossier médical complet
+                </small>
+            </div>
+            
+            <div class="form-group">
+                <label for="nom"><span id="nomLabel">👤 Nom Complet</span> *</label>
+                <input type="text" id="nom" name="nom" required autofocus placeholder="Nom du contact">
+            </div>
+            
+            <div class="form-group">
+                <label for="email">📧 Email *</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="telephone">📱 Téléphone *</label>
+                <input type="tel" id="telephone" name="telephone" required placeholder="+212606060606">
+                <small>Format international recommandé pour WhatsApp</small>
+            </div>
+            
+            <hr style="margin: 30px 0;" id="sectionPro">
+            
+            <h3 id="titlePro">Informations Professionnelles (Optionnel)</h3>
+            
+            <div class="form-group" id="fieldTitrePoste">
+                <label for="titre_poste"><span id="labelTitrePoste">💼 Titre du Poste / Profession</span></label>
+                <input type="text" id="titre_poste" name="titre_poste" placeholder="Ex: Médecin, Infirmier, Manager">
+            </div>
+            
+            <div class="form-group" id="fieldEntreprise">
+                <label for="entreprise"><span id="labelEntreprise">🏢 Entreprise</span></label>
+                <input type="text" id="entreprise" name="entreprise" placeholder="Nom de l'entreprise">
+            </div>
+            
+            <hr style="margin: 30px 0;">
+            
+            <h3>Adresse (Optionnel)</h3>
+            
+            <div class="form-group">
+                <label for="adresse">🏠 Adresse</label>
+                <input type="text" id="adresse" name="adresse" placeholder="Numéro et rue">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label for="ville">🏙️ Ville</label>
+                    <input type="text" id="ville" name="ville">
+                </div>
+                
+                <div class="form-group">
+                    <label for="code_postal">📮 Code Postal</label>
+                    <input type="text" id="code_postal" name="code_postal">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="pays">🌍 Pays</label>
+                <input type="text" id="pays" name="pays" value="Maroc">
+            </div>
+            
+            <hr style="margin: 30px 0;" id="sectionMedical">
+            
+            <h3 id="titleMedical">Informations Médicales (Optionnel)</h3>
+            
+            <div id="medicalFields">
+            
+            <div class="form-group" id="field_date_naissance">
+                <label for="date_naissance"><span id="label_date_naissance">🎂 Date de Naissance</span></label>
+                <input type="text" id="date_naissance" name="date_naissance" placeholder="">
+            </div>
+            
+            <div class="form-group" id="field_groupe_sanguin">
+                <label for="groupe_sanguin">🩸 Groupe Sanguin</label>
+                <select id="groupe_sanguin" name="groupe_sanguin">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="field_numero_secu">
+                <label for="numero_secu"><span id="label_numero_secu">🔢 Numéro de Sécurité Sociale</span></label>
+                <input type="text" id="numero_secu" name="numero_secu" maxlength="50" placeholder="">
+            </div>
+            
+            <div class="form-group" id="field_allergies">
+                <label for="allergies"><span id="label_allergies">⚠️ Allergies</span></label>
+                <textarea id="allergies" name="allergies" rows="3" placeholder=""></textarea>
+            </div>
+            
+            <div class="form-group" id="field_notes">
+                <label for="notes"><span id="label_notes">📝 Notes</span></label>
+                <textarea id="notes" name="notes" rows="4" placeholder="Informations additionnelles..."></textarea>
+            </div>
+            
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success" id="submitBtn">✓ Ajouter le Patient</button>
+                <a href="{{ url_for('contacts') }}" class="btn btn-secondary">✗ Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateFormFields() {
+    const categorie = document.getElementById('categorie').value;
+    const categoryHelp = document.getElementById('categoryHelp');
+    const nomLabel = document.getElementById('nomLabel');
+    const titlePro = document.getElementById('titlePro');
+    const titleMedical = document.getElementById('titleMedical');
+    const submitBtn = document.getElementById('submitBtn');
+    const labelTitrePoste = document.getElementById('labelTitrePoste');
+    const labelEntreprise = document.getElementById('labelEntreprise');
+    const notesField = document.getElementById('notes');
+    
+    // Show/hide sections
+    const sectionMedical = document.getElementById('sectionMedical');
+    const sectionPro = document.getElementById('sectionPro');
+    const fieldTitrePoste = document.getElementById('fieldTitrePoste');
+    const fieldEntreprise = document.getElementById('fieldEntreprise');
+    
+    // Medical fields
+    const medicalFields = ['field_date_naissance', 'field_groupe_sanguin', 'field_numero_secu', 'field_allergies', 'field_notes'];
+    
+    // Reset all to visible first
+    medicalFields.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'block';
+    });
+    sectionMedical.style.display = 'block';
+    sectionPro.style.display = 'block';
+    
+    switch(categorie) {
+        case 'Patient':
+            categoryHelp.textContent = '👤 Informations patient avec dossier médical complet';
+            nomLabel.innerHTML = '👤 Nom du Patient';
+            titleMedical.textContent = 'Informations Médicales (Optionnel)';
+            submitBtn.innerHTML = '✓ Ajouter le Patient';
+            labelTitrePoste.innerHTML = '💼 Profession';
+            labelEntreprise.innerHTML = '🏢 Employeur';
+            notesField.placeholder = 'Notes médicales, antécédents, traitements en cours...';
+            break;
+            
+        case 'Pharmacie':
+            categoryHelp.textContent = '💊 Pharmacie partenaire pour commandes de médicaments';
+            nomLabel.innerHTML = '💊 Nom de la Pharmacie';
+            document.getElementById('nom').placeholder = 'Ex: Pharmacie Centrale';
+            titlePro.textContent = 'Informations Pharmacie (Recommandé)';
+            labelTitrePoste.innerHTML = '👨‍⚕️ Pharmacien Responsable';
+            labelEntreprise.innerHTML = '🏢 Enseigne/Groupe';
+            document.getElementById('titre_poste').placeholder = 'Nom du pharmacien responsable';
+            document.getElementById('entreprise').placeholder = 'Ex: Pharmacie Lafayette, Indépendant';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Spécifiques Pharmacie';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Horaires d'ouverture
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '🕐 Horaires d\'Ouverture';
+            document.getElementById('date_naissance').type = 'text';
+            document.getElementById('date_naissance').placeholder = 'Ex: Lun-Ven 8h-20h, Sam 9h-18h';
+            
+            // Réutiliser numero_secu → N° Licence/Agrément
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '📜 N° Licence/Agrément';
+            document.getElementById('numero_secu').placeholder = 'Numéro d\'autorisation officiel';
+            
+            // Réutiliser allergies → Services disponibles
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '💊 Services Disponibles';
+            document.getElementById('allergies').placeholder = 'Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Informations complémentaires sur la pharmacie...';
+            
+            submitBtn.innerHTML = '✓ Ajouter la Pharmacie';
+            break;
+            
+        case 'Laboratoire':
+            categoryHelp.textContent = '🔬 Laboratoire d\'analyses médicales';
+            nomLabel.innerHTML = '🔬 Nom du Laboratoire';
+            document.getElementById('nom').placeholder = 'Ex: Laboratoire Bio-Santé';
+            titlePro.textContent = 'Informations Laboratoire (Recommandé)';
+            labelTitrePoste.innerHTML = '👨‍🔬 Directeur/Responsable';
+            labelEntreprise.innerHTML = '🏢 Réseau/Groupe';
+            document.getElementById('titre_poste').placeholder = 'Nom du responsable';
+            document.getElementById('entreprise').placeholder = 'Ex: Biogroup, Cerba, Indépendant';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Spécifiques Laboratoire';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Délai de Résultats
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '⏱️ Délai de Résultats';
+            document.getElementById('date_naissance').type = 'text';
+            document.getElementById('date_naissance').placeholder = 'Ex: 24h pour analyses standard, 48h pour biologie';
+            
+            // Réutiliser numero_secu → N° d'Accréditation
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '🏅 N° d\'Accréditation';
+            document.getElementById('numero_secu').placeholder = 'Numéro d\'accréditation COFRAC ou équivalent';
+            
+            // Réutiliser allergies → Spécialités
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '🔬 Spécialités & Analyses';
+            document.getElementById('allergies').placeholder = 'Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Informations complémentaires, horaires, modalités de prélèvement...';
+            
+            submitBtn.innerHTML = '✓ Ajouter le Laboratoire';
+            break;
+            
+        case 'Assurance':
+            categoryHelp.textContent = '🛡️ Compagnie d\'assurance santé ou mutuelle';
+            nomLabel.innerHTML = '🛡️ Nom de l\'Assurance';
+            document.getElementById('nom').placeholder = 'Ex: Mutuelle Générale';
+            titlePro.textContent = 'Informations Assurance (Recommandé)';
+            labelTitrePoste.innerHTML = '👔 Conseiller/Gestionnaire';
+            labelEntreprise.innerHTML = '🏢 Organisme';
+            document.getElementById('titre_poste').placeholder = 'Votre contact chez l\'assureur';
+            document.getElementById('entreprise').placeholder = 'Nom complet de l\'organisme';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Contrat & Couverture';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Date d'Adhésion
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '📅 Date d\'Adhésion';
+            document.getElementById('date_naissance').type = 'date';
+            document.getElementById('date_naissance').placeholder = '';
+            
+            // Réutiliser numero_secu → N° Police/Contrat
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '📋 N° Police/Contrat';
+            document.getElementById('numero_secu').placeholder = 'Numéro de contrat ou police d\'assurance';
+            
+            // Réutiliser allergies → Type de Couverture
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '🛡️ Type de Couverture';
+            document.getElementById('allergies').placeholder = 'Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Garanties spécifiques, exclusions, procédures de remboursement...';
+            
+            submitBtn.innerHTML = '✓ Ajouter l\'Assurance';
+            break;
+            
+        case 'Fournisseur':
+            categoryHelp.textContent = '📦 Fournisseur de produits ou services';
+            nomLabel.innerHTML = '📦 Nom du Fournisseur';
+            titlePro.textContent = 'Informations Fournisseur';
+            labelTitrePoste.innerHTML = '👔 Commercial/Contact';
+            labelEntreprise.innerHTML = '🏢 Société';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Commerciales';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Date de Partenariat
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '📅 Date de Début Collaboration';
+            document.getElementById('date_naissance').type = 'date';
+            document.getElementById('date_naissance').placeholder = '';
+            
+            // Réutiliser numero_secu → N° SIRET/RC
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '🏢 N° SIRET/RC';
+            document.getElementById('numero_secu').placeholder = 'Numéro d\'identification fiscale';
+            
+            // Réutiliser allergies → Produits/Services
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '📦 Produits/Services Fournis';
+            document.getElementById('allergies').placeholder = 'Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Conditions de paiement, délais de livraison, tarifs négociés...';
+            
+            submitBtn.innerHTML = '✓ Ajouter le Fournisseur';
+            break;
+            
+        case 'Partenaire':
+            categoryHelp.textContent = '🤜 Partenaire professionnel';
+            nomLabel.innerHTML = '🤜 Nom du Partenaire';
+            titlePro.textContent = 'Informations Partenaire';
+            labelTitrePoste.innerHTML = '👔 Fonction';
+            labelEntreprise.innerHTML = '🏢 Organisation';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Partenariat';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Date de Partenariat
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '📅 Date de Début Partenariat';
+            document.getElementById('date_naissance').type = 'date';
+            document.getElementById('date_naissance').placeholder = '';
+            
+            // Réutiliser numero_secu → N° Convention
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '📜 N° Convention/Accord';
+            document.getElementById('numero_secu').placeholder = 'Référence de la convention ou accord';
+            
+            // Réutiliser allergies → Type de Partenariat
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '🤝 Type de Partenariat';
+            document.getElementById('allergies').placeholder = 'Ex: Référencement mutuel, Co-marketing, Échange de services, R&D';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Termes du partenariat, objectifs communs, engagements...';
+            
+            submitBtn.innerHTML = '✓ Ajouter le Partenaire';
+            break;
+            
+        case 'Entreprise':
+        case 'Client':
+            if (categorie === 'Entreprise') {
+                categoryHelp.textContent = '🏢 Entreprise cliente ou partenaire';
+                nomLabel.innerHTML = '🏢 Nom de l\'Entreprise';
+                submitBtn.innerHTML = '✓ Ajouter l\'Entreprise';
+            } else {
+                categoryHelp.textContent = '💼 Client professionnel';
+                nomLabel.innerHTML = '💼 Nom du Client';
+                submitBtn.innerHTML = '✓ Ajouter le Client';
+            }
+            
+            titlePro.textContent = 'Informations Professionnelles';
+            labelTitrePoste.innerHTML = '👔 Personne de Contact / Poste';
+            labelEntreprise.innerHTML = '🏢 Société';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Commerciales';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Date de Début Relation
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '📅 Date de Début Relation';
+            document.getElementById('date_naissance').type = 'date';
+            document.getElementById('date_naissance').placeholder = '';
+            
+            // Réutiliser numero_secu → N° SIRET/Client
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '🏢 N° SIRET/Client';
+            document.getElementById('numero_secu').placeholder = 'Numéro d\'identification';
+            
+            // Réutiliser allergies → Secteur d'Activité
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '🏭 Secteur d\'Activité';
+            document.getElementById('allergies').placeholder = 'Ex: Santé, Technologie, Commerce, Services, Industrie';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Besoins spécifiques, historique des transactions, préférences...';
+            
+            break;
+            
+        default:
+            categoryHelp.textContent = '📋 Contact général';
+            nomLabel.innerHTML = '👤 Nom du Contact';
+            titleMedical.textContent = 'Informations Complémentaires';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin uniquement
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Garder les autres champs visibles mais simplifiés
+            document.getElementById('field_date_naissance').style.display = 'none';
+            document.getElementById('field_numero_secu').style.display = 'none';
+            document.getElementById('field_allergies').style.display = 'none';
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Informations additionnelles...';
+            
+            submitBtn.innerHTML = '✓ Ajouter le Contact';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateFormFields();
+});
+</script>
+{% endblock %}

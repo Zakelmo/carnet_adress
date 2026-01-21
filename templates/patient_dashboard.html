@@ -1,0 +1,605 @@
+{% extends "base.html" %}
+
+{% set categorie = patient.categorie or 'Patient' if patient else 'Patient' %}
+
+{% block title %}
+{% if categorie == 'Patient' %}
+Mon Espace Patient - Cabinet Médical
+{% elif categorie == 'Pharmacie' %}
+Mon Espace Pharmacie - Cabinet Médical
+{% elif categorie == 'Laboratoire' %}
+Mon Espace Laboratoire - Cabinet Médical
+{% elif categorie == 'Assurance' %}
+Mon Espace Assurance - Cabinet Médical
+{% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+Mon Espace {{ categorie }} - Cabinet Médical
+{% else %}
+Mon Espace - Cabinet Médical
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header de bienvenue -->
+    <div class="header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px;">
+        <h1 style="margin: 0; color: white;">
+            {% if categorie == 'Patient' %}
+            👋 Bienvenue, {{ username }} !
+            {% elif categorie == 'Pharmacie' %}
+            💊 Bienvenue, {{ username }} !
+            {% elif categorie == 'Laboratoire' %}
+            🔬 Bienvenue, {{ username }} !
+            {% elif categorie == 'Assurance' %}
+            🛡️ Bienvenue, {{ username }} !
+            {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+            🏢 Bienvenue, {{ username }} !
+            {% else %}
+            👋 Bienvenue, {{ username }} !
+            {% endif %}
+        </h1>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">
+            {% if categorie == 'Patient' %}
+            Votre espace patient personnel
+            {% elif categorie == 'Pharmacie' %}
+            Votre espace pharmacie
+            {% elif categorie == 'Laboratoire' %}
+            Votre espace laboratoire
+            {% elif categorie == 'Assurance' %}
+            Votre espace assurance
+            {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+            Votre espace {{ categorie|lower }}
+            {% else %}
+            Votre espace personnel
+            {% endif %}
+        </p>
+    </div>
+
+    {% if patient %}
+    <!-- Carte d'informations personnelles -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        
+        <!-- Informations personnelles -->
+        <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                📋 Mes Informations
+            </h3>
+            <div style="margin-top: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">👤 Nom :</strong><br>
+                    <span style="font-size: 1.1em; color: #333;">{{ patient.nom }}</span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📧 Email :</strong><br>
+                    <span style="color: #333;">{{ patient.email }}</span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📱 Téléphone :</strong><br>
+                    <span style="color: #333;">{{ patient.telephone }}</span>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee;">
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" class="btn btn-primary" style="width: 100%; text-align: center;">
+                        ✏️ Modifier mes informations
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informations spécifiques (médicales, professionnelles, etc.) -->
+        <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            {% set categorie = patient.categorie or 'Patient' %}
+            
+            {% if categorie == 'Patient' %}
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+                🏥 Informations Médicales
+            </h3>
+            <div style="margin-top: 20px;">
+                {% if patient.date_naissance %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🎂 Date de naissance :</strong><br>
+                    <span style="color: #333;">{{ patient.date_naissance }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.groupe_sanguin %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🩸 Groupe sanguin :</strong><br>
+                    <span style="font-size: 1.2em; color: #d9534f; font-weight: bold;">{{ patient.groupe_sanguin }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.numero_secu %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🔢 N° Sécurité Sociale :</strong><br>
+                    <span style="color: #333; font-family: monospace;">{{ patient.numero_secu }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.allergies %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">⚠️ Allergies :</strong><br>
+                    <span style="color: #d9534f; font-weight: bold;">{{ patient.allergies }}</span>
+                </div>
+                {% endif %}
+                
+                {% if not patient.date_naissance and not patient.groupe_sanguin and not patient.numero_secu and not patient.allergies %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    Aucune information médicale enregistrée.<br>
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" style="color: #667eea;">Ajouter des informations</a>
+                </p>
+                {% endif %}
+            </div>
+            
+            {% elif categorie == 'Pharmacie' %}
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+                💊 Informations Pharmacie
+            </h3>
+            <div style="margin-top: 20px;">
+                {% if patient.titre_poste %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">👨‍⚕️ Pharmacien Responsable :</strong><br>
+                    <span style="color: #333; font-weight: bold;">{{ patient.titre_poste }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.date_naissance %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🕐 Horaires d'Ouverture :</strong><br>
+                    <span style="color: #333;">{{ patient.date_naissance }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.numero_secu %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📜 N° Licence/Agrément :</strong><br>
+                    <span style="color: #333; font-family: monospace;">{{ patient.numero_secu }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.allergies %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">💊 Services Disponibles :</strong><br>
+                    <span style="color: #333;">{{ patient.allergies }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.adresse %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📍 Adresse :</strong><br>
+                    <span style="color: #333;">{{ patient.adresse }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.ville %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏙️ Ville :</strong><br>
+                    <span style="color: #333;">{{ patient.ville }}</span>
+                    {% if patient.code_postal %} - {{ patient.code_postal }}{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if not patient.titre_poste and not patient.date_naissance and not patient.numero_secu and not patient.allergies and not patient.adresse and not patient.ville %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    Aucune information enregistrée.<br>
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" style="color: #667eea;">Ajouter des informations</a>
+                </p>
+                {% endif %}
+            </div>
+            
+            {% elif categorie == 'Laboratoire' %}
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #20c997; padding-bottom: 10px;">
+                🔬 Informations Laboratoire
+            </h3>
+            <div style="margin-top: 20px;">
+                {% if patient.titre_poste %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">👨‍🔬 Directeur/Responsable :</strong><br>
+                    <span style="color: #333; font-weight: bold;">{{ patient.titre_poste }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.date_naissance %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">⏱️ Délai de Résultats :</strong><br>
+                    <span style="color: #333;">{{ patient.date_naissance }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.numero_secu %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏅 N° d'Accréditation :</strong><br>
+                    <span style="color: #333; font-family: monospace;">{{ patient.numero_secu }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.allergies %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🔬 Spécialités & Analyses :</strong><br>
+                    <span style="color: #333;">{{ patient.allergies }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.adresse %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📍 Adresse :</strong><br>
+                    <span style="color: #333;">{{ patient.adresse }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.ville %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏙️ Ville :</strong><br>
+                    <span style="color: #333;">{{ patient.ville }}</span>
+                    {% if patient.code_postal %} - {{ patient.code_postal }}{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if not patient.titre_poste and not patient.date_naissance and not patient.numero_secu and not patient.allergies and not patient.adresse and not patient.ville %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    Aucune information enregistrée.<br>
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" style="color: #667eea;">Ajouter des informations</a>
+                </p>
+                {% endif %}
+            </div>
+            
+            {% elif categorie == 'Assurance' %}
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #e83e8c; padding-bottom: 10px;">
+                🛡️ Informations Assurance
+            </h3>
+            <div style="margin-top: 20px;">
+                {% if patient.titre_poste %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">👔 Conseiller/Gestionnaire :</strong><br>
+                    <span style="color: #333; font-weight: bold;">{{ patient.titre_poste }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.date_naissance %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📅 Date d'Adhésion :</strong><br>
+                    <span style="color: #333;">{{ patient.date_naissance }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.numero_secu %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📋 N° Police/Contrat :</strong><br>
+                    <span style="color: #333; font-family: monospace;">{{ patient.numero_secu }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.allergies %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🛡️ Type de Couverture :</strong><br>
+                    <span style="color: #333;">{{ patient.allergies }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.adresse %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📍 Adresse :</strong><br>
+                    <span style="color: #333;">{{ patient.adresse }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.ville %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏙️ Ville :</strong><br>
+                    <span style="color: #333;">{{ patient.ville }}</span>
+                    {% if patient.code_postal %} - {{ patient.code_postal }}{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if not patient.titre_poste and not patient.date_naissance and not patient.numero_secu and not patient.allergies and not patient.adresse and not patient.ville %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    Aucune information enregistrée.<br>
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" style="color: #667eea;">Ajouter des informations</a>
+                </p>
+                {% endif %}
+            </div>
+            
+            {% elif categorie in ['Entreprise', 'Client', 'Fournisseur', 'Partenaire'] %}
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #fd7e14; padding-bottom: 10px;">
+                🏢 Informations {{ categorie }}
+            </h3>
+            <div style="margin-top: 20px;">
+                {% if patient.titre_poste %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">👔 Contact Principal :</strong><br>
+                    <span style="color: #333; font-weight: bold;">{{ patient.titre_poste }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.entreprise %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏢 Société :</strong><br>
+                    <span style="color: #333; font-weight: bold;">{{ patient.entreprise }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.date_naissance %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📅 Date de Début Relation :</strong><br>
+                    <span style="color: #333;">{{ patient.date_naissance }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.numero_secu %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏢 N° SIRET/{% if categorie == 'Partenaire' %}Convention{% else %}Client{% endif %} :</strong><br>
+                    <span style="color: #333; font-family: monospace;">{{ patient.numero_secu }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.allergies %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">
+                        {% if categorie == 'Partenaire' %}🤝 Type de Partenariat{% elif categorie == 'Fournisseur' %}📦 Produits/Services{% else %}🏭 Secteur d'Activité{% endif %} :
+                    </strong><br>
+                    <span style="color: #333;">{{ patient.allergies }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.adresse %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📍 Adresse :</strong><br>
+                    <span style="color: #333;">{{ patient.adresse }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.ville %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏙️ Ville :</strong><br>
+                    <span style="color: #333;">{{ patient.ville }}</span>
+                    {% if patient.code_postal %} - {{ patient.code_postal }}{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if not patient.titre_poste and not patient.entreprise and not patient.date_naissance and not patient.numero_secu and not patient.allergies and not patient.adresse and not patient.ville %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    Aucune information enregistrée.<br>
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" style="color: #667eea;">Ajouter des informations</a>
+                </p>
+                {% endif %}
+            </div>
+            
+            {% else %}
+            <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #6c757d; padding-bottom: 10px;">
+                📋 Informations Générales
+            </h3>
+            <div style="margin-top: 20px;">
+                {% if patient.adresse %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">📍 Adresse :</strong><br>
+                    <span style="color: #333;">{{ patient.adresse }}</span>
+                </div>
+                {% endif %}
+                
+                {% if patient.ville %}
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #666;">🏙️ Ville :</strong><br>
+                    <span style="color: #333;">{{ patient.ville }}</span>
+                    {% if patient.code_postal %} - {{ patient.code_postal }}{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if not patient.adresse and not patient.ville %}
+                <p style="color: #999; text-align: center; padding: 20px;">
+                    Aucune information enregistrée.<br>
+                    <a href="{{ url_for('edit_contact', nom=patient.nom) }}" style="color: #667eea;">Ajouter des informations</a>
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Notes médicales -->
+    {% if patient.notes %}
+    <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 30px; border-left: 4px solid #ffc107;">
+        <h4 style="margin-top: 0; color: #856404;">
+            📝 Notes Médicales
+        </h4>
+        <p style="margin: 0; color: #856404; white-space: pre-wrap;">{{ patient.notes }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Rendez-vous à venir -->
+    <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <span>📅 Mes Rendez-vous</span>
+            <a href="{{ url_for('book_appointment') }}" class="btn btn-primary" style="font-size: 0.85em; padding: 8px 15px;">
+                ➕ Nouveau RDV
+            </a>
+        </h3>
+        
+        {% if appointments_upcoming %}
+        <div style="margin-top: 20px;">
+            {% for apt in appointments_upcoming %}
+            <div style="padding: 20px; margin-bottom: 15px; border-radius: 8px; background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border-left: 4px solid #667eea;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                            <span style="font-size: 1.5em;">📅</span>
+                            <div>
+                                <strong style="color: #333; font-size: 1.1em;">{{ apt.date_rdv }}</strong><br>
+                                <span style="color: #667eea; font-weight: 600;">{{ apt.heure_debut }} - {{ apt.heure_fin }}</span>
+                            </div>
+                        </div>
+                        {% if apt.motif %}
+                        <div style="margin-top: 10px;">
+                            <strong style="color: #666; font-size: 0.9em;">Motif :</strong>
+                            <span style="color: #333;">{{ apt.motif }}</span>
+                        </div>
+                        {% endif %}
+                        {% if apt.notes %}
+                        <div style="margin-top: 5px;">
+                            <strong style="color: #666; font-size: 0.9em;">Notes :</strong>
+                            <span style="color: #666; font-size: 0.9em;">{{ apt.notes }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <form method="POST" action="{{ url_for('cancel_appointment', appointment_id=apt.id) }}" 
+                          onsubmit="return confirm('Êtes-vous sûr de vouloir annuler ce rendez-vous ?');"
+                          style="margin: 0;">
+                        <button type="submit" class="btn btn-warning" style="font-size: 0.85em; padding: 6px 12px;">
+                            🗑️ Annuler
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{{ url_for('appointments') }}" class="btn btn-secondary">
+                    Voir tous mes rendez-vous →
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 40px;">
+            <p style="color: #999; margin-bottom: 20px;">
+                📅 Vous n'avez pas de rendez-vous planifié.
+            </p>
+            <a href="{{ url_for('book_appointment') }}" class="btn btn-primary">
+                Réserver un rendez-vous
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Historique des communications -->
+    <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h3 style="margin-top: 0; color: #333; border-bottom: 2px solid #17a2b8; padding-bottom: 10px;">
+            💬 Communications Récentes
+        </h3>
+        
+        {% if historique_recent %}
+        <div style="margin-top: 20px;">
+            {% for comm in historique_recent %}
+            <div style="padding: 15px; margin-bottom: 15px; border-radius: 8px; background: #f8f9fa; border-left: 3px solid {% if comm.type == 'email' %}#007bff{% else %}#28a745{% endif %};">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                    <div>
+                        <strong style="color: #333;">
+                            {% if comm.type == 'email' %}
+                                📧 Email
+                            {% else %}
+                                💬 WhatsApp
+                            {% endif %}
+                            {% if comm.sujet %} - {{ comm.sujet }}{% endif %}
+                        </strong>
+                    </div>
+                    <span style="font-size: 0.85em; color: #666;">{{ comm.date_envoi }}</span>
+                </div>
+                <p style="margin: 0; color: #666; font-size: 0.9em;">{{ comm.message[:100] }}{% if comm.message|length > 100 %}...{% endif %}</p>
+            </div>
+            {% endfor %}
+            
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="{{ url_for('communication_history', nom=patient.nom) }}" class="btn btn-secondary">
+                    Voir tout l'historique →
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <p style="color: #999; text-align: center; padding: 40px;">
+            Aucune communication pour le moment.<br>
+            Le cabinet vous contactera si nécessaire.
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Informations de contact du cabinet -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 10px; margin-bottom: 30px;">
+        <h3 style="margin-top: 0; color: white; border-bottom: 2px solid rgba(255,255,255,0.3); padding-bottom: 10px;">
+            📞 Besoin d'Aide ?
+        </h3>
+        <div style="margin-top: 20px;">
+            <p style="margin-bottom: 15px; opacity: 0.95;">
+                <strong>Cabinet Médical</strong><br>
+                Pour toute question ou prise de rendez-vous
+            </p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                <div>
+                    <strong>📞 Téléphone :</strong><br>
+                    <span>01 23 45 67 89</span>
+                </div>
+                <div>
+                    <strong>📧 Email :</strong><br>
+                    <span>contact@cabinet.ma</span>
+                </div>
+                <div>
+                    <strong>🕒 Horaires :</strong><br>
+                    <span>Lun-Ven: 9h-18h</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Cas où aucune information patient n'est trouvée -->
+    <div style="background: #f8d7da; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
+        <h3 style="color: #721c24;">⚠️ Aucune information patient trouvée</h3>
+        <p style="color: #721c24;">
+            Vos informations n'ont pas été trouvées dans le système.<br>
+            Veuillez contacter l'administrateur du cabinet.
+        </p>
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="margin-top: 20px;">
+            Se déconnecter
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+    transform: translateY(-2px);
+}
+
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138496;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
