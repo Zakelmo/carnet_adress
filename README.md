@@ -1294,7 +1294,7 @@ SELECT * FROM users; # Voir les utilisateurs
 ## 📝 Changelog et versions
 
 ### Version 2.3.0 (v6 - Application Web) - Actuelle
-**Date:** 2024
+**Date:** 2026
 
 **Nouveautés:**
 - ✨ Refonte complète en application web Flask
@@ -1458,7 +1458,7 @@ Cette application est fournie "telle quelle" sans garantie d'aucune sorte. Les d
 **Fin de la documentation**
 
 **Version du document:** 1.0  
-**Dernière mise à jour:** 2024  
+**Dernière mise à jour:** 2026  
 **Application version:** v2.3.0
 
 ---

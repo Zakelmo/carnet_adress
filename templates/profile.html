@@ -34,9 +34,9 @@
             </div>
         </div>
         
-        {% if user_role == 'user' and patient %}
-        <!-- Section Informations Patient (pour USER uniquement) -->
-        {% set categorie = patient.categorie or 'Patient' %}
+        {% if user_role == 'user' and contact %}
+        <!-- Section Informations Contact (pour USER uniquement) -->
+        {% set categorie = user_category or contact.categorie or 'Patient' %}
         <div class="profile-actions">
             <h2>
                 {% if categorie == 'Patient' %}
@@ -54,7 +54,7 @@
                 {% endif %}
             </h2>
             <form method="POST" action="{{ url_for('profile') }}">
-                <input type="hidden" name="action" value="patient_info">
+                <input type="hidden" name="action" value="contact_info">
                 
                 <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                     <strong>ℹ️ Information :</strong> 
@@ -82,17 +82,17 @@
                         👤 Nom
                         {% endif %}
                     </label>
-                    <input type="text" value="{{ patient.nom }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                    <input type="text" value="{{ contact.nom }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
                 </div>
                 
                 <div class="form-group">
                     <label>📧 Email</label>
-                    <input type="email" value="{{ patient.email }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                    <input type="email" value="{{ contact.email }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
                 </div>
                 
                 <div class="form-group">
                     <label>📱 Téléphone</label>
-                    <input type="tel" value="{{ patient.telephone }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+                    <input type="tel" value="{{ contact.telephone }}" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
                 </div>
                 
                 <hr style="margin: 30px 0;">
@@ -102,37 +102,37 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">🎂 Date de Naissance</label>
-                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
                 </div>
                 
                 <div class="form-group">
                     <label for="groupe_sanguin">🩸 Groupe Sanguin</label>
                     <select id="groupe_sanguin" name="groupe_sanguin">
                         <option value="">-- Sélectionner --</option>
-                        <option value="A+" {% if patient.groupe_sanguin == 'A+' %}selected{% endif %}>A+</option>
-                        <option value="A-" {% if patient.groupe_sanguin == 'A-' %}selected{% endif %}>A-</option>
-                        <option value="B+" {% if patient.groupe_sanguin == 'B+' %}selected{% endif %}>B+</option>
-                        <option value="B-" {% if patient.groupe_sanguin == 'B-' %}selected{% endif %}>B-</option>
-                        <option value="AB+" {% if patient.groupe_sanguin == 'AB+' %}selected{% endif %}>AB+</option>
-                        <option value="AB-" {% if patient.groupe_sanguin == 'AB-' %}selected{% endif %}>AB-</option>
-                        <option value="O+" {% if patient.groupe_sanguin == 'O+' %}selected{% endif %}>O+</option>
-                        <option value="O-" {% if patient.groupe_sanguin == 'O-' %}selected{% endif %}>O-</option>
+                        <option value="A+" {% if contact.groupe_sanguin == 'A+' %}selected{% endif %}>A+</option>
+                        <option value="A-" {% if contact.groupe_sanguin == 'A-' %}selected{% endif %}>A-</option>
+                        <option value="B+" {% if contact.groupe_sanguin == 'B+' %}selected{% endif %}>B+</option>
+                        <option value="B-" {% if contact.groupe_sanguin == 'B-' %}selected{% endif %}>B-</option>
+                        <option value="AB+" {% if contact.groupe_sanguin == 'AB+' %}selected{% endif %}>AB+</option>
+                        <option value="AB-" {% if contact.groupe_sanguin == 'AB-' %}selected{% endif %}>AB-</option>
+                        <option value="O+" {% if contact.groupe_sanguin == 'O+' %}selected{% endif %}>O+</option>
+                        <option value="O-" {% if contact.groupe_sanguin == 'O-' %}selected{% endif %}>O-</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label for="numero_secu">🔢 Numéro de Sécurité Sociale</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="15">
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="15">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">⚠️ Allergies</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Pénicilline, Arachides, etc.">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Pénicilline, Arachides, etc.">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes Médicales</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Informations médicales additionnelles...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations médicales additionnelles...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% elif categorie == 'Pharmacie' %}
@@ -140,22 +140,22 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">🕐 Horaires d'Ouverture</label>
-                    <input type="text" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}" placeholder="Ex: Lun-Ven 8h-20h, Sam 9h-18h">
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}" placeholder="Ex: Lun-Ven 8h-20h, Sam 9h-18h">
                 </div>
                 
                 <div class="form-group">
                     <label for="numero_secu">📜 N° Licence/Agrément</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'autorisation officiel">
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'autorisation officiel">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">💊 Services Disponibles</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires sur la pharmacie...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires sur la pharmacie...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% elif categorie == 'Laboratoire' %}
@@ -163,22 +163,22 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">⏱️ Délai de Résultats</label>
-                    <input type="text" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}" placeholder="Ex: 24h pour analyses standard, 48h pour biologie">
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}" placeholder="Ex: 24h pour analyses standard, 48h pour biologie">
                 </div>
                 
                 <div class="form-group">
                     <label for="numero_secu">🏅 N° d'Accréditation</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'accréditation COFRAC ou équivalent">
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'accréditation COFRAC ou équivalent">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">🔬 Spécialités & Analyses</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires, horaires, modalités de prélèvement...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires, horaires, modalités de prélèvement...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% elif categorie == 'Assurance' %}
@@ -186,22 +186,22 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">📅 Date d'Adhésion</label>
-                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
                 </div>
                 
                 <div class="form-group">
                     <label for="numero_secu">📋 N° Police/Contrat</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro de contrat ou police d'assurance">
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro de contrat ou police d'assurance">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">🛡️ Type de Couverture</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Garanties spécifiques, exclusions, procédures de remboursement...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Garanties spécifiques, exclusions, procédures de remboursement...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% elif categorie == 'Fournisseur' %}
@@ -209,22 +209,22 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">📅 Date de Début Collaboration</label>
-                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
                 </div>
                 
                 <div class="form-group">
-                    <label for="numero_secu">🏢 N° SIRET/RC</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification fiscale">
+                    <label for="numero_secu">🏢 N° RC</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification fiscale">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">📦 Produits/Services Fournis</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Conditions de paiement, délais de livraison, tarifs négociés...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Conditions de paiement, délais de livraison, tarifs négociés...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% elif categorie == 'Partenaire' %}
@@ -232,22 +232,22 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">📅 Date de Début Partenariat</label>
-                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
                 </div>
                 
                 <div class="form-group">
                     <label for="numero_secu">📜 N° Convention/Accord</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Référence de la convention ou accord">
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Référence de la convention ou accord">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">🤝 Type de Partenariat</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Référencement mutuel, Co-marketing, Échange de services, R&D">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Référencement mutuel, Co-marketing, Échange de services, R&D">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Termes du partenariat, objectifs communs, engagements...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Termes du partenariat, objectifs communs, engagements...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% elif categorie in ['Entreprise', 'Client'] %}
@@ -255,22 +255,22 @@
                 
                 <div class="form-group">
                     <label for="date_naissance">📅 Date de Début Relation</label>
-                    <input type="date" id="date_naissance" name="date_naissance" value="{{ patient.date_naissance or '' }}">
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
                 </div>
                 
                 <div class="form-group">
                     <label for="numero_secu">🏢 N° SIRET/Client</label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ patient.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification">
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification">
                 </div>
                 
                 <div class="form-group">
                     <label for="allergies">🏭 Secteur d'Activité</label>
-                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Santé, Technologie, Commerce, Services, Industrie">{{ patient.allergies or '' }}</textarea>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Santé, Technologie, Commerce, Services, Industrie">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="4" placeholder="Besoins spécifiques, historique des transactions, préférences...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Besoins spécifiques, historique des transactions, préférences...">{{ contact.notes or '' }}</textarea>
                 </div>
                 
                 {% else %}
@@ -278,7 +278,7 @@
                 
                 <div class="form-group">
                     <label for="notes">📝 Notes</label>
-                    <textarea id="notes" name="notes" rows="6" placeholder="Ajoutez ici toutes les informations importantes...">{{ patient.notes or '' }}</textarea>
+                    <textarea id="notes" name="notes" rows="6" placeholder="Ajoutez ici toutes les informations importantes...">{{ contact.notes or '' }}</textarea>
                 </div>
                 {% endif %}
                 

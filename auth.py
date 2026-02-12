@@ -39,7 +39,7 @@ class AuthManager:
             fichier_users (str): Nom du fichier stockant les utilisateurs
         """
         self.fichier_users = fichier_users
-        self.users = {}  # Format: {username: {'password_hash': str, 'role': str}}
+        self.users = {}  # Format: {username: {'password_hash': str, 'role': str, 'category': str}}
         self.charger_users()
         self.creer_super_admin_initial()
     
@@ -66,17 +66,29 @@ class AuthManager:
                     ligne = ligne.strip()
                     if ligne:
                         parties = ligne.split('|')
-                        if len(parties) == 3:
+                        if len(parties) >= 4:
+                            # Format: username|password_hash|role|category
+                            username, password_hash, role = parties[0], parties[1], parties[2]
+                            category = parties[3] if len(parties) > 3 else 'Patient'
+                            self.users[username] = {
+                                'password_hash': password_hash,
+                                'role': role,
+                                'category': category
+                            }
+                        elif len(parties) == 3:
+                            # Format legacy: username|password_hash|role (default to Patient)
                             username, password_hash, role = parties
                             self.users[username] = {
                                 'password_hash': password_hash,
-                                'role': role
+                                'role': role,
+                                'category': 'Patient'
                             }
                         elif len(parties) == 2:  # Migration ancien format
                             username, password_hash = parties
                             self.users[username] = {
                                 'password_hash': password_hash,
-                                'role': Role.USER
+                                'role': Role.USER,
+                                'category': 'Patient'
                             }
         except Exception as e:
             print(f"⚠ Erreur lors du chargement des utilisateurs: {e}")
@@ -86,7 +98,8 @@ class AuthManager:
         try:
             with open(self.fichier_users, 'w', encoding='utf-8') as f:
                 for username, data in self.users.items():
-                    f.write(f"{username}|{data['password_hash']}|{data['role']}\n")
+                    category = data.get('category', 'Patient')
+                    f.write(f"{username}|{data['password_hash']}|{data['role']}|{category}\n")
         except Exception as e:
             print(f"⚠ Erreur lors de la sauvegarde des utilisateurs: {e}")
     
@@ -108,7 +121,7 @@ class AuthManager:
         print("Visitez http://localhost:5000/register pour créer le premier compte.")
         print("="*60 + "\n")
     
-    def creer_compte(self, username, password, role=Role.USER, created_by_role=None, patient_info=None):
+    def creer_compte(self, username, password, role=Role.USER, created_by_role=None, patient_info=None, category='Patient'):
         """
         Crée un nouveau compte utilisateur
         
@@ -117,7 +130,8 @@ class AuthManager:
             password (str): Mot de passe
             role (str): Rôle de l'utilisateur
             created_by_role (str): Rôle de la personne qui crée le compte
-            patient_info (dict): Informations du patient (nom, email, telephone) - requis pour USER
+            patient_info (dict): Informations du contact (nom, email, telephone) - requis pour USER
+            category (str): Catégorie du contact (Patient, Pharmacie, Fournisseur, etc.)
         
         Returns:
             tuple: (succès (bool), message (str))
@@ -138,23 +152,33 @@ class AuthManager:
                 if user_data['role'] == Role.SUPER_ADMIN:
                     return False, "Un Super Administrateur existe déjà! Un seul Super Admin est autorisé par système."
         
-        # RÈGLE NOUVELLE: Pour créer un compte USER, le patient doit déjà être enregistré
+        # RÈGLE NOUVELLE: Pour créer un compte USER, le contact doit déjà être enregistré
         # Cela s'applique aussi bien pour l'auto-inscription (created_by_role=None) que pour la création par Admin
         if role == Role.USER:
             if not patient_info:
-                return False, "Les informations du patient sont requises pour créer un compte utilisateur!"
+                return False, "Les informations du contact sont requises pour créer un compte utilisateur!"
             
-            # Vérifier que le patient existe dans la base de données
+            # Vérifier que le contact existe dans la base de données
             from address_book import AddressBook
             carnet = AddressBook()
-            patient_existe, patient_data = carnet.patient_existe(
+            contact_existe, contact_data = carnet.patient_existe(
                 nom=patient_info.get('nom'),
                 email=patient_info.get('email'),
                 telephone=patient_info.get('telephone')
             )
             
-            if not patient_existe:
-                return False, "Ce patient n'existe pas dans le système. Veuillez d'abord enregistrer le patient avant de créer un compte utilisateur."
+            if not contact_existe:
+                return False, "Ce contact n'existe pas dans le système. Veuillez d'abord enregistrer le contact avant de créer un compte utilisateur."
+            
+            # Récupérer la catégorie du contact si non spécifiée
+            if category == 'Patient' and contact_data:
+                # Try to get actual category from contact
+                try:
+                    contact = carnet.rechercher_contact(patient_info.get('nom'))
+                    if contact and contact.categorie:
+                        category = contact.categorie
+                except:
+                    pass
         
         # Vérification des permissions de création
         if created_by_role == Role.ADMIN and role == Role.ADMIN:
@@ -169,7 +193,8 @@ class AuthManager:
         password_hash = self.hash_password(password)
         self.users[username] = {
             'password_hash': password_hash,
-            'role': role
+            'role': role,
+            'category': category
         }
         self.sauvegarder_users()
         
@@ -205,6 +230,20 @@ class AuthManager:
         if username in self.users:
             return self.users[username]['role']
         return None
+    
+    def get_user_category(self, username):
+        """
+        Récupère la catégorie d'un utilisateur
+        
+        Args:
+            username (str): Nom d'utilisateur
+        
+        Returns:
+            str: La catégorie de l'utilisateur ou 'Patient' par défaut
+        """
+        if username in self.users:
+            return self.users[username].get('category', 'Patient')
+        return 'Patient'
     
     def modifier_user(self, username, new_password=None, new_role=None, modified_by_username=None):
         """
@@ -299,7 +338,8 @@ class AuthManager:
             users_list.append({
                 'username': username,
                 'role': data['role'],
-                'role_name': Role.get_role_name(data['role'])
+                'role_name': Role.get_role_name(data['role']),
+                'category': data.get('category', 'Patient')
             })
         
         return sorted(users_list, key=lambda x: x['username'])

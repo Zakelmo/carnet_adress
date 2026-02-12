@@ -83,6 +83,7 @@ def login():
         if auth_manager.authentifier(username, password):
             session['username'] = username
             session['role'] = auth_manager.get_user_role(username)
+            session['category'] = auth_manager.get_user_category(username)
             session.pop('show_register_hint', None)
             flash(f'Bienvenue {username}! ({Role.get_role_name(session["role"])})', 'success')
             
@@ -146,6 +147,10 @@ def register():
                     )
                     
                     if patient_existe:
+                        # Récupérer la catégorie du contact
+                        contact = carnet.rechercher_contact(patient_nom)
+                        category = contact.categorie if contact else 'Patient'
+                        
                         # Créer le compte utilisateur
                         patient_info = {
                             'nom': patient_nom,
@@ -157,7 +162,8 @@ def register():
                             password, 
                             role=Role.USER,
                             created_by_role=None,  # Auto-inscription
-                            patient_info=patient_info
+                            patient_info=patient_info,
+                            category=category
                         )
                         
                         if succes:
@@ -288,10 +294,12 @@ def edit_contact(nom):
     # Vérifier les permissions pour USER
     if user_role == Role.USER:
         # USER ne peut modifier que son propre profil patient
-        # Vérifier que le contact appartient bien à ce user
-        if contact.nom != nom:
+        # Vérifier que le contact correspond au nom d'utilisateur
+        # On accepte si le nom d'utilisateur est contenu dans le nom du contact
+        # ou si le contact a été créé par cet utilisateur
+        if username.lower() not in contact.nom.lower().replace(' ', '_') and username.lower() not in contact.email.lower():
             flash('Vous ne pouvez modifier que vos propres informations!', 'error')
-            return redirect(url_for('contacts'))
+            return redirect(url_for('patient_dashboard'))
     
     if request.method == 'POST':
         # USER ne peut PAS modifier nom, email, téléphone (infos d'identification)
@@ -493,15 +501,16 @@ def create_user():
             flash('Rôle invalide!', 'error')
             return redirect(url_for('create_user'))
         
-        # Pour les utilisateurs normaux (USER), récupérer les infos du patient
+        # Pour les utilisateurs normaux (USER), récupérer les infos du contact et sa catégorie
         patient_info = None
+        category = 'Patient'
         if new_role == Role.USER:
             patient_nom = request.form.get('patient_nom', '').strip()
             patient_email = request.form.get('patient_email', '').strip()
             patient_telephone = request.form.get('patient_telephone', '').strip()
             
             if not patient_nom or not patient_email or not patient_telephone:
-                flash('Pour créer un compte utilisateur, les informations du patient (nom, email, téléphone) sont obligatoires!', 'error')
+                flash('Pour créer un compte utilisateur, les informations du contact (nom, email, téléphone) sont obligatoires!', 'error')
                 return render_template('create_user.html', 
                                      available_roles=[Role.USER, Role.ADMIN] if user_role == Role.SUPER_ADMIN else [Role.USER],
                                      Role=Role,
@@ -512,13 +521,20 @@ def create_user():
                 'email': patient_email,
                 'telephone': patient_telephone
             }
+            
+            # Récupérer la catégorie du contact
+            carnet_temp = AddressBook()
+            contact = carnet_temp.rechercher_contact(patient_nom)
+            if contact:
+                category = contact.categorie
         
         succes, message = auth_manager.creer_compte(
             new_username, 
             new_password, 
             new_role, 
             created_by_role=user_role,
-            patient_info=patient_info
+            patient_info=patient_info,
+            category=category
         )
         
         if succes:
@@ -689,12 +705,12 @@ def clear_database():
     return redirect(url_for('superadmin_panel'))
 
 
-# ============= ROUTE PATIENT DASHBOARD =============
+# ============= ROUTE USER DASHBOARD =============
 
 @app.route('/dashboard')
 @login_required
 def patient_dashboard():
-    """Dashboard personnel pour les patients (USER)"""
+    """Dashboard personnel pour les utilisateurs (USER) - Gère différentes catégories"""
     username = session['username']
     user_role = session.get('role', Role.USER)
     
@@ -702,16 +718,17 @@ def patient_dashboard():
     if user_role in [Role.ADMIN, Role.SUPER_ADMIN]:
         return redirect(url_for('contacts'))
     
-    # Récupérer les informations du patient lié à ce compte utilisateur
-    # Chercher le patient dans toute la base de données (pas filtré par username)
+    # Récupérer la catégorie de l'utilisateur
+    user_category = auth_manager.get_user_category(username)
+    
+    # Récupérer les informations du contact lié à ce compte utilisateur
     import sqlite3
-    patient_info = None
+    contact_info = None
     try:
         conn = sqlite3.connect(Config.DATABASE_NAME)
         cursor = conn.cursor()
         
-        # Chercher le patient qui correspond au username (lien créé lors de la création du compte)
-        # Pour l'instant, on cherche tous les patients et on prend celui qui correspond
+        # Chercher le contact qui correspond au username
         cursor.execute("""
             SELECT nom, email, telephone, date_naissance, groupe_sanguin, 
                    allergies, notes, numero_secu, categorie, adresse, ville,
@@ -722,33 +739,31 @@ def patient_dashboard():
         
         all_contacts = cursor.fetchall()
         
-        # Si seulement un contact, c'est celui du patient
-        # Sinon, essayer de trouver par correspondance username
+        # Chercher par correspondance username
         if all_contacts:
-            # Pour simplifier, on prend le premier ou celui qui correspond au username
             from contact import Contact
             for row in all_contacts:
                 # Créer un objet Contact avec tous les champs
                 contact = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
                                 row[8], row[9], row[10], row[11], row[12], row[13], row[14])
-                # Vérifier si c'est le bon patient (par username ou email)
+                # Vérifier si c'est le bon contact (par username ou email)
                 if username.lower() in row[0].lower().replace(' ', '_') or username.lower() in row[1].lower():
-                    patient_info = contact
+                    contact_info = contact
                     break
             
             # Si pas trouvé par correspondance, prendre le premier
-            if not patient_info and all_contacts:
+            if not contact_info and all_contacts:
                 row = all_contacts[0]
-                patient_info = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
+                contact_info = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
                                      row[8], row[9], row[10], row[11], row[12], row[13], row[14])
         
         conn.close()
     except Exception as e:
-        print(f"Erreur lors de la récupération du patient: {e}")
+        print(f"Erreur lors de la récupération du contact: {e}")
     
-    # Récupérer l'historique des communications pour ce patient
+    # Récupérer l'historique des communications pour ce contact
     historique_recent = []
-    if patient_info:
+    if contact_info:
         try:
             conn = sqlite3.connect(Config.DATABASE_NAME)
             cursor = conn.cursor()
@@ -758,7 +773,7 @@ def patient_dashboard():
                 WHERE contact_nom = ?
                 ORDER BY date_envoi DESC
                 LIMIT 5
-            """, (patient_info.nom,))
+            """, (contact_info.nom,))
             
             for row in cursor.fetchall():
                 historique_recent.append({
@@ -773,19 +788,21 @@ def patient_dashboard():
         except Exception as e:
             print(f"Erreur lors de la récupération de l'historique: {e}")
     
-    # Récupérer les rendez-vous à venir du patient
+    # Récupérer les rendez-vous à venir (seulement pour les patients)
     appointments_upcoming = []
-    if patient_info:
+    if contact_info and user_category == 'Patient':
         try:
             conn = sqlite3.connect(Config.DATABASE_NAME)
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT id, date_rdv, heure_debut, heure_fin, motif, notes, statut
                 FROM appointments
-                WHERE (created_for = ? OR contact_nom = ?) AND statut = 'confirmé'
+                WHERE (created_for = ? OR contact_nom = ? OR LOWER(contact_nom) = LOWER(?)) 
+                  AND statut = 'confirmé'
+                  AND date_rdv >= date('now')
                 ORDER BY date_rdv ASC, heure_debut ASC
                 LIMIT 5
-            """, (username, patient_info.nom))
+            """, (username, contact_info.nom, contact_info.nom))
             
             for row in cursor.fetchall():
                 appointments_upcoming.append({
@@ -804,7 +821,9 @@ def patient_dashboard():
     return render_template('patient_dashboard.html',
                          username=username,
                          user_role=user_role,
-                         patient=patient_info,
+                         user_category=user_category,
+                         contact=contact_info,
+                         patient=contact_info,
                          historique_recent=historique_recent,
                          appointments_upcoming=appointments_upcoming)
 
@@ -814,21 +833,23 @@ def patient_dashboard():
 @app.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
-    """Page de profil utilisateur - modifier mot de passe et infos patient"""
+    """Page de profil utilisateur - modifier mot de passe et infos contact"""
     username = session['username']
     user_role = session['role']
     
-    # Pour USER, récupérer les informations du patient
-    patient_info = None
+    # Pour USER, récupérer la catégorie et les informations du contact
+    user_category = auth_manager.get_user_category(username) if user_role == Role.USER else None
+    contact_info = None
     if user_role == Role.USER:
-        # Chercher le patient dans toute la base de données
+        # Chercher le contact dans toute la base de données
         import sqlite3
         try:
             conn = sqlite3.connect(Config.DATABASE_NAME)
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT nom, email, telephone, date_naissance, groupe_sanguin, 
-                       allergies, notes, numero_secu 
+                       allergies, notes, numero_secu, categorie, adresse, ville,
+                       code_postal, pays, titre_poste, entreprise
                 FROM contacts 
                 ORDER BY id DESC
             """)
@@ -837,18 +858,20 @@ def profile():
             if all_contacts:
                 from contact import Contact
                 for row in all_contacts:
-                    contact = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7])
+                    contact = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
+                                    row[8], row[9], row[10], row[11], row[12], row[13], row[14])
                     if username.lower() in row[0].lower().replace(' ', '_') or username.lower() in row[1].lower():
-                        patient_info = contact
+                        contact_info = contact
                         break
                 
-                if not patient_info and all_contacts:
+                if not contact_info and all_contacts:
                     row = all_contacts[0]
-                    patient_info = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7])
+                    contact_info = Contact(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7],
+                                         row[8], row[9], row[10], row[11], row[12], row[13], row[14])
             
             conn.close()
         except Exception as e:
-            print(f"Erreur lors de la récupération du patient: {e}")
+            print(f"Erreur lors de la récupération du contact: {e}")
     
     if request.method == 'POST':
         action = request.form.get('action', 'password')
@@ -874,38 +897,79 @@ def profile():
                 else:
                     flash(message, 'error')
         
-        elif action == 'patient_info' and user_role == Role.USER and patient_info:
-            # Modification des informations patient (USER uniquement)
-            date_naissance = request.form.get('date_naissance', '').strip() or None
-            groupe_sanguin = request.form.get('groupe_sanguin', '').strip() or None
-            allergies = request.form.get('allergies', '').strip() or None
-            notes = request.form.get('notes', '').strip() or None
-            numero_secu = request.form.get('numero_secu', '').strip() or None
+        elif action in ['contact_info', 'patient_info'] and user_role == Role.USER and contact_info:
+            # Modification des informations contact (USER uniquement)
+            # Les champs modifiables dépendent de la catégorie
+            if user_category == 'Patient':
+                date_naissance = request.form.get('date_naissance', '').strip() or None
+                groupe_sanguin = request.form.get('groupe_sanguin', '').strip() or None
+                allergies = request.form.get('allergies', '').strip() or None
+                notes = request.form.get('notes', '').strip() or None
+                numero_secu = request.form.get('numero_secu', '').strip() or None
+                
+                carnet = AddressBook(username=username)
+                carnet.modifier_contact(
+                    contact_info.nom,
+                    contact_info.nom,  # Nom inchangé
+                    contact_info.email,  # Email inchangé
+                    contact_info.telephone,  # Téléphone inchangé
+                    date_naissance,
+                    groupe_sanguin,
+                    allergies,
+                    notes,
+                    numero_secu,
+                    contact_info.categorie,
+                    contact_info.adresse,
+                    contact_info.ville,
+                    contact_info.code_postal,
+                    contact_info.pays,
+                    contact_info.titre_poste,
+                    contact_info.entreprise
+                )
+            else:
+                # Pour les autres catégories, permettre la modification des infos professionnelles
+                adresse = request.form.get('adresse', '').strip() or None
+                ville = request.form.get('ville', '').strip() or None
+                code_postal = request.form.get('code_postal', '').strip() or None
+                pays = request.form.get('pays', '').strip() or None
+                titre_poste = request.form.get('titre_poste', '').strip() or None
+                entreprise = request.form.get('entreprise', '').strip() or None
+                notes = request.form.get('notes', '').strip() or None
+                
+                carnet = AddressBook(username=username)
+                carnet.modifier_contact(
+                    contact_info.nom,
+                    contact_info.nom,  # Nom inchangé
+                    contact_info.email,  # Email inchangé
+                    contact_info.telephone,  # Téléphone inchangé
+                    contact_info.date_naissance,
+                    contact_info.groupe_sanguin,
+                    contact_info.allergies,
+                    notes,
+                    contact_info.numero_secu,
+                    contact_info.categorie,
+                    adresse,
+                    ville,
+                    code_postal,
+                    pays,
+                    titre_poste,
+                    entreprise
+                )
             
-            carnet = AddressBook(username=username)
-            carnet.modifier_contact(
-                patient_info.nom,
-                patient_info.nom,  # Nom inchangé
-                patient_info.email,  # Email inchangé
-                patient_info.telephone,  # Téléphone inchangé
-                date_naissance,
-                groupe_sanguin,
-                allergies,
-                notes,
-                numero_secu
-            )
             flash('Vos informations ont été mises à jour avec succès!', 'success')
             
             # Recharger les informations
             carnet = AddressBook(username=username)
             contacts_list = carnet.contacts
-            patient_info = contacts_list[0] if contacts_list else None
+            contact_info = contacts_list[0] if contacts_list else None
     
     return render_template('profile.html',
                          username=username,
                          user_role=user_role,
+                         user_category=user_category,
                          role_name=Role.get_role_name(user_role),
-                         patient=patient_info)
+                         contact=contact_info,
+                         patient=contact_info)
 
 
 # ============= ROUTES COMMUNICATIONS =============
@@ -1187,22 +1251,43 @@ def appointments():
     
     if user_role == 'user':
         # Les patients voient uniquement leurs propres RDV
+        # D'abord essayer de trouver le nom du patient associé à ce compte
+        patient_nom = username
+        try:
+            cursor.execute("""
+                SELECT nom FROM contacts 
+                WHERE LOWER(email) = LOWER((SELECT email FROM contacts WHERE LOWER(nom) = LOWER(?)))
+                OR LOWER(nom) = LOWER(?)
+            """, (username, username))
+            result = cursor.fetchone()
+            if result:
+                patient_nom = result[0]
+        except Exception:
+            pass
+        
         cursor.execute("""
             SELECT id, contact_nom, contact_email, contact_telephone, 
                    date_rdv, heure_debut, heure_fin, motif, notes, statut, 
-                   created_by, date_creation
+                   created_by, date_creation, created_for
             FROM appointments 
-            WHERE created_for = ? OR contact_nom = ?
-            ORDER BY date_rdv DESC, heure_debut DESC
-        """, (username, username))
+            WHERE created_for = ? OR contact_nom = ? OR LOWER(contact_nom) = LOWER(?)
+            ORDER BY 
+                CASE WHEN date_rdv >= date('now') THEN 0 ELSE 1 END,
+                date_rdv ASC, 
+                heure_debut ASC
+        """, (username, patient_nom, patient_nom))
     else:
         # Admin et Super Admin voient tous les RDV
+        # Les RDV à venir d'abord, puis par date croissante
         cursor.execute("""
             SELECT id, contact_nom, contact_email, contact_telephone, 
                    date_rdv, heure_debut, heure_fin, motif, notes, statut, 
-                   created_by, date_creation
+                   created_by, date_creation, created_for
             FROM appointments 
-            ORDER BY date_rdv DESC, heure_debut DESC
+            ORDER BY 
+                CASE WHEN date_rdv >= date('now') THEN 0 ELSE 1 END,
+                date_rdv ASC, 
+                heure_debut ASC
         """)
     
     appointments_list = []
@@ -1219,7 +1304,8 @@ def appointments():
             'notes': row[8],
             'statut': row[9],
             'created_by': row[10],
-            'date_creation': row[11]
+            'date_creation': row[11],
+            'created_for': row[12]
         })
     
     conn.close()
@@ -1237,6 +1323,14 @@ def book_appointment():
     username = session.get('username')
     user_role = session.get('role', 'user')
     
+    # Vérifier la catégorie de l'utilisateur
+    user_category = auth_manager.get_user_category(username) if user_role == Role.USER else None
+    
+    # Les utilisateurs non-patients ne peuvent pas réserver de rendez-vous pour eux-mêmes
+    if user_role == Role.USER and user_category != 'Patient':
+        flash(f"Les utilisateurs de catégorie '{user_category}' ne peuvent pas réserver de rendez-vous. Cette fonctionnalité est réservée aux patients.", 'error')
+        return redirect(url_for('patient_dashboard'))
+    
     if request.method == 'POST':
         contact_nom = request.form.get('contact_nom')
         contact_email = request.form.get('contact_email')
@@ -1250,29 +1344,76 @@ def book_appointment():
             flash('Veuillez remplir tous les champs obligatoires!', 'error')
             return redirect(url_for('book_appointment'))
         
-        # Calculer l'heure de fin (30 minutes après le début)
-        from datetime import datetime, timedelta
+        # Validation de la date (ne pas permettre les RDV dans le passé)
+        from datetime import datetime, timedelta, date
         try:
             debut = datetime.strptime(heure_debut, '%H:%M')
             fin = debut + timedelta(minutes=30)
             heure_fin = fin.strftime('%H:%M')
-        except:
-            flash('Format d\'heure invalide!', 'error')
+            
+            # Vérifier que la date n'est pas dans le passé
+            rdv_date = datetime.strptime(date_rdv, '%Y-%m-%d').date()
+            today = date.today()
+            if rdv_date < today:
+                flash('Impossible de réserver un rendez-vous dans le passé!', 'error')
+                return redirect(url_for('book_appointment'))
+            
+            # Vérifier les heures d'ouverture (8h00 - 18h00)
+            if debut.hour < 8 or debut.hour >= 18:
+                flash('Les rendez-vous doivent être entre 8h00 et 18h00!', 'error')
+                return redirect(url_for('book_appointment'))
+                
+        except ValueError:
+            flash('Format de date ou d\'heure invalide!', 'error')
             return redirect(url_for('book_appointment'))
         
-        # Vérifier si le créneau est déjà pris
+        # Vérifier si le créneau est déjà pris (chevauchement)
         conn = sqlite3.connect('contacts.db')
         cursor = conn.cursor()
         
+        # Requête pour détecter les chevauchements:
+        # Un RDV existe déjà si: 
+        # - Il est sur la même date ET
+        # - Son heure de début est avant notre heure de fin ET
+        # - Son heure de fin est après notre heure de début
         cursor.execute("""
-            SELECT id FROM appointments 
-            WHERE date_rdv = ? AND heure_debut = ?
-        """, (date_rdv, heure_debut))
+            SELECT id, heure_debut, heure_fin FROM appointments 
+            WHERE date_rdv = ? 
+            AND statut != 'annulé'
+            AND heure_debut < ? 
+            AND heure_fin > ?
+        """, (date_rdv, heure_fin, heure_debut))
         
-        if cursor.fetchone():
+        conflict = cursor.fetchone()
+        if conflict:
             conn.close()
-            flash('Ce créneau horaire est déjà réservé!', 'error')
+            flash(f'Ce créneau horaire chevauche un rendez-vous existant ({conflict[1]} - {conflict[2]})!', 'error')
             return redirect(url_for('book_appointment'))
+        
+        # Pour les patients (USER), vérifier que le contact correspond à leur profil
+        created_for = username
+        if user_role == Role.USER:
+            # Récupérer le nom du patient associé à ce compte
+            try:
+                cursor.execute("""
+                    SELECT c.nom FROM contacts c
+                    JOIN users_patients_link upl ON c.id = upl.contact_id
+                    WHERE upl.username = ?
+                """, (username,))
+                result = cursor.fetchone()
+                if result:
+                    created_for = result[0]
+                else:
+                    # Fallback: chercher le patient par correspondance de nom
+                    cursor.execute("""
+                        SELECT nom FROM contacts 
+                        WHERE LOWER(nom) = LOWER(?) OR LOWER(email) = LOWER(?)
+                    """, (contact_nom, contact_email))
+                    result = cursor.fetchone()
+                    if result:
+                        created_for = result[0]
+            except Exception:
+                pass  # La table de liaison peut ne pas exister
         
         # Créer le rendez-vous
         try:
@@ -1282,27 +1423,109 @@ def book_appointment():
                  heure_debut, heure_fin, motif, notes, statut, created_by, created_for)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmé', ?, ?)
             """, (contact_nom, contact_email, contact_telephone, date_rdv,
-                  heure_debut, heure_fin, motif, notes, username, username))
+                  heure_debut, heure_fin, motif, notes, username, created_for))
             
             conn.commit()
+            
+            # Envoyer une confirmation par email si configuré
+            if Config.is_email_configured():
+                try:
+                    # 1. Email de confirmation au patient
+                    if contact_email:
+                        email_service.envoyer_email_template(
+                            contact_email,
+                            contact_nom,
+                            'confirmation',
+                            {'date': date_rdv, 'heure': heure_debut},
+                            sent_by=username,
+                            contact_nom=contact_nom
+                        )
+                    
+                    # 2. Email de notification au Cabinet Médical
+                    cabinet_email = Config.DEFAULT_SENDER_EMAIL
+                    if cabinet_email:
+                        sujet_cabinet = f"📅 Nouveau rendez-vous réservé - {contact_nom}"
+                        motif_display = motif if motif else "Non spécifié"
+                        notes_display = notes if notes else "Aucune"
+                        
+                        corps_cabinet = f"""Bonjour,
+
+Un nouveau rendez-vous vient d'être réservé :
+
+📋 Informations du rendez-vous :
+• Patient : {contact_nom}
+• Email : {contact_email or 'Non fourni'}
+• Téléphone : {contact_telephone or 'Non fourni'}
+• Date : {date_rdv}
+• Heure : {heure_debut} - {heure_fin}
+• Motif : {motif_display}
+• Notes : {notes_display}
+• Réservé par : {username} ({user_role})
+
+N'oubliez pas de confirmer ce rendez-vous si nécessaire.
+
+Cordialement,
+Système de Gestion des Rendez-vous"""
+                        
+                        email_service.envoyer_email(
+                            cabinet_email,
+                            Config.DEFAULT_SENDER_NAME,
+                            sujet_cabinet,
+                            corps_cabinet,
+                            sent_by=username,
+                            contact_nom="Cabinet Médical"
+                        )
+                except Exception as e:
+                    print(f"Erreur lors de l'envoi des emails de confirmation: {e}")
+            
             flash('Rendez-vous réservé avec succès!', 'success')
-        except sqlite3.IntegrityError:
-            flash('Erreur: Ce créneau est déjà pris!', 'error')
-        except Exception as e:
-            flash(f'Erreur lors de la réservation: {str(e)}', 'error')
-        finally:
             conn.close()
-        
-        return redirect(url_for('appointments'))
+            return redirect(url_for('appointments'))
+            
+        except sqlite3.IntegrityError:
+            conn.close()
+            flash(f'❌ Le créneau {heure_debut} le {date_rdv} vient d\'être réservé par quelqu\'un d\'autre. Veuillez choisir un autre créneau.', 'error')
+            # Rediriger vers la page de réservation avec la date pré-sélectionnée
+            return redirect(url_for('book_appointment'))
+            
+        except Exception as e:
+            conn.close()
+            flash(f'Erreur lors de la réservation: {str(e)}', 'error')
+            return redirect(url_for('book_appointment'))
     
     # GET: Afficher le formulaire avec les contacts disponibles
     carnet = AddressBook(username=username if user_role in ['admin', 'super_admin'] else None)
     contacts_list = carnet.contacts
     
+    # Pour les patients, récupérer leurs informations de contact
+    patient_info = None
+    if user_role == Role.USER:
+        try:
+            conn = sqlite3.connect(Config.DATABASE_NAME)
+            cursor = conn.cursor()
+            # Chercher le patient qui correspond au nom d'utilisateur
+            cursor.execute("""
+                SELECT nom, email, telephone 
+                FROM contacts 
+                WHERE LOWER(nom) = LOWER(?) OR LOWER(nom) = LOWER(?)
+                LIMIT 1
+            """, (username, username.replace('_', ' ')))
+            result = cursor.fetchone()
+            if result:
+                patient_info = {
+                    'nom': result[0],
+                    'email': result[1],
+                    'telephone': result[2]
+                }
+            conn.close()
+        except Exception as e:
+            print(f"Erreur lors de la récupération des infos patient: {e}")
+    
     return render_template('book_appointment.html',
                          contacts=contacts_list,
                          username=username,
-                         user_role=user_role)
+                         user_role=user_role,
+                         patient_info=patient_info)
 
 
 @app.route('/get_available_slots', methods=['POST'])
@@ -1314,26 +1537,59 @@ def get_available_slots():
     if not date_rdv:
         return jsonify({'error': 'Date manquante'}), 400
     
+    # Validation de la date (ne pas montrer de créneaux pour les dates passées)
+    from datetime import datetime, date, timedelta
+    try:
+        rdv_date = datetime.strptime(date_rdv, '%Y-%m-%d').date()
+        if rdv_date < date.today():
+            return jsonify({
+                'error': 'La date est dans le passé',
+                'available_slots': [],
+                'taken_slots': []
+            }), 400
+    except ValueError:
+        return jsonify({'error': 'Format de date invalide'}), 400
+    
     # Horaires de travail: 8h00 à 18h00, par créneaux de 30 minutes
     all_slots = []
     for hour in range(8, 18):
         all_slots.append(f"{hour:02d}:00")
         all_slots.append(f"{hour:02d}:30")
     
-    # Récupérer les créneaux déjà pris
+    # Récupérer les créneaux déjà pris avec leurs heures de fin
     conn = sqlite3.connect('contacts.db')
     cursor = conn.cursor()
     
     cursor.execute("""
-        SELECT heure_debut FROM appointments 
+        SELECT heure_debut, heure_fin FROM appointments 
         WHERE date_rdv = ? AND statut != 'annulé'
     """, (date_rdv,))
     
-    taken_slots = [row[0] for row in cursor.fetchall()]
+    taken_appointments = cursor.fetchall()
     conn.close()
     
-    # Créneaux disponibles
-    available_slots = [slot for slot in all_slots if slot not in taken_slots]
+    taken_slots = [row[0] for row in taken_appointments]
+    
+    # Calculer les créneaux disponibles en vérifiant les chevauchements
+    available_slots = []
+    for slot in all_slots:
+        slot_time = datetime.strptime(slot, '%H:%M')
+        slot_end = slot_time + timedelta(minutes=30)
+        slot_end_str = slot_end.strftime('%H:%M')
+        
+        # Vérifier si ce créneau chevauche un rendez-vous existant
+        is_available = True
+        for appt_start, appt_end in taken_appointments:
+            appt_start_time = datetime.strptime(appt_start, '%H:%M')
+            appt_end_time = datetime.strptime(appt_end, '%H:%M')
+            
+            # Chevauchement si: slot_debut < appt_fin ET slot_fin > appt_debut
+            if slot_time < appt_end_time and slot_end > appt_start_time:
+                is_available = False
+                break
+        
+        if is_available:
+            available_slots.append(slot)
     
     return jsonify({
         'available_slots': available_slots,
@@ -1351,29 +1607,119 @@ def cancel_appointment(appointment_id):
     conn = sqlite3.connect('contacts.db')
     cursor = conn.cursor()
     
-    # Vérifier si l'utilisateur a le droit d'annuler ce RDV
-    if user_role == 'user':
-        cursor.execute("""
-            SELECT id FROM appointments 
-            WHERE id = ? AND (created_by = ? OR created_for = ?)
-        """, (appointment_id, username, username))
-    else:
-        cursor.execute("SELECT id FROM appointments WHERE id = ?", (appointment_id,))
-    
-    if not cursor.fetchone():
-        conn.close()
-        flash('Rendez-vous introuvable ou non autorisé!', 'error')
-        return redirect(url_for('appointments'))
-    
-    # Annuler le rendez-vous
+    # Récupérer les informations du RDV pour vérification et notification
     cursor.execute("""
-        UPDATE appointments 
-        SET statut = 'annulé' 
+        SELECT contact_nom, contact_email, date_rdv, heure_debut, statut
+        FROM appointments 
         WHERE id = ?
     """, (appointment_id,))
     
+    appointment = cursor.fetchone()
+    if not appointment:
+        conn.close()
+        flash('Rendez-vous introuvable!', 'error')
+        return redirect(url_for('appointments'))
+    
+    contact_nom, contact_email, date_rdv, heure_debut, current_status = appointment
+    
+    # Vérifier si l'utilisateur a le droit d'annuler ce RDV
+    if user_role == 'user':
+        # Pour les patients, vérifier par nom de contact ou created_for
+        cursor.execute("""
+            SELECT id FROM appointments 
+            WHERE id = ? AND (created_for = ? OR contact_nom = ? OR LOWER(contact_nom) = LOWER(?))
+        """, (appointment_id, username, username, username))
+        
+        if not cursor.fetchone():
+            conn.close()
+            flash('Vous n\'êtes pas autorisé à annuler ce rendez-vous!', 'error')
+            return redirect(url_for('appointments'))
+    
+    # Vérifier si le RDV est déjà annulé
+    if current_status == 'annulé':
+        conn.close()
+        flash('Ce rendez-vous est déjà annulé!', 'warning')
+        return redirect(url_for('appointments'))
+    
+    # Vérifier que le RDV n'est pas dans le passé
+    from datetime import datetime
+    try:
+        rdv_datetime = datetime.strptime(f"{date_rdv} {heure_debut}", "%Y-%m-%d %H:%M")
+        if rdv_datetime < datetime.now():
+            conn.close()
+            flash('Impossible d\'annuler un rendez-vous passé!', 'error')
+            return redirect(url_for('appointments'))
+    except ValueError:
+        pass  # Si format invalide, on continue quand même
+    
+    # Annuler le rendez-vous
+    # Note: On modifie aussi l'heure pour éviter le conflit avec la contrainte UNIQUE
+    from datetime import datetime
+    cancelled_time = f"ANNULE-{datetime.now().strftime('%Y%m%d%H%M%S')}-{appointment_id}"
+    cursor.execute("""
+        UPDATE appointments 
+        SET statut = 'annulé',
+            heure_debut = ?,
+            heure_fin = ?
+        WHERE id = ?
+    """, (cancelled_time, cancelled_time, appointment_id))
+    
     conn.commit()
     conn.close()
+    
+    # Envoyer une notification d'annulation par email si configuré
+    if Config.is_email_configured():
+        try:
+            # 1. Email au patient
+            if contact_email:
+                sujet_patient = f"Annulation de votre rendez-vous du {date_rdv}"
+                corps_patient = f"""Bonjour {contact_nom},
+
+Votre rendez-vous du {date_rdv} à {heure_debut} a été annulé.
+
+Pour réserver un nouveau rendez-vous, veuillez contacter le cabinet.
+
+Cordialement,
+{Config.DEFAULT_SENDER_NAME}"""
+                
+                email_service.envoyer_email(
+                    contact_email,
+                    contact_nom,
+                    sujet_patient,
+                    corps_patient,
+                    sent_by=username,
+                    contact_nom=contact_nom
+                )
+            
+            # 2. Email de notification au Cabinet Médical
+            cabinet_email = Config.DEFAULT_SENDER_EMAIL
+            if cabinet_email:
+                sujet_cabinet = f"🔔 Annulation d'un rendez-vous - {contact_nom}"
+                corps_cabinet = f"""Bonjour,
+
+Une annulation de rendez-vous vient d'être effectuée :
+
+📋 Informations du rendez-vous annulé :
+• Patient : {contact_nom}
+• Date : {date_rdv}
+• Heure : {heure_debut}
+• Annulé par : {username} ({user_role})
+
+Ce rendez-vous est maintenant libre et peut être réservé par un autre patient.
+
+Cordialement,
+Système de Gestion des Rendez-vous"""
+                
+                email_service.envoyer_email(
+                    cabinet_email,
+                    Config.DEFAULT_SENDER_NAME,
+                    sujet_cabinet,
+                    corps_cabinet,
+                    sent_by=username,
+                    contact_nom="Cabinet Médical"
+                )
+        except Exception as e:
+            print(f"Erreur lors de l'envoi des emails d'annulation: {e}")
     
     flash('Rendez-vous annulé avec succès!', 'success')
     return redirect(url_for('appointments'))

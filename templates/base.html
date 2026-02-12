@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Carnet d'Adresses{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Favicons -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.svg') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
+    <meta name="theme-color" content="#667eea">
 </head>
 <body>
     <div class="container">
@@ -18,14 +24,16 @@
                     {% elif session.get('role') == 'admin' %}
                     <span class="role-badge admin">Admin</span>
                     {% else %}
-                    <span class="role-badge user">Patient</span>
+                    <span class="role-badge user">{{ session.get('category', 'Patient') }}</span>
                     {% endif %}
                 </span>
                 
                 {% if session.get('role') == 'user' %}
-                <!-- Menu simplifié pour les patients -->
+                <!-- Menu simplifié pour les utilisateurs -->
                 <a href="{{ url_for('patient_dashboard') }}" class="nav-link">🏠 Mon Espace</a>
+                {% if session.get('category') == 'Patient' %}
                 <a href="{{ url_for('appointments') }}" class="nav-link">📅 Rendez-vous</a>
+                {% endif %}
                 <a href="{{ url_for('profile') }}" class="nav-link">👤 Profil</a>
                 <a href="{{ url_for('logout') }}" class="nav-link logout">🚪 Déconnexion</a>
                 
@@ -67,7 +75,7 @@
         </main>
         
         <footer>
-            <p>&copy; 2024 Cabinet Médical - Gestion des Patients</p>
+            <p>&copy; 2026 Cabinet Médical - Gestion des Patients</p>
         </footer>
     </div>
 </body>

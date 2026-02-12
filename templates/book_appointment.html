@@ -13,14 +13,14 @@
         <div class="form-grid">
             <!-- Informations du contact -->
             <div class="form-section">
-                <h3>👤 Informations du Patient</h3>
+                <h3>👤 Informations du Contact</h3>
                 
                 {% if user_role == 'user' %}
-                <!-- Pour les patients, remplir automatiquement avec leur nom -->
+                <!-- Pour les patients, remplir automatiquement avec leurs informations -->
                 <div class="form-group">
                     <label for="contact_nom">Nom *</label>
                     <input type="text" id="contact_nom" name="contact_nom" 
-                           value="{{ username }}" required readonly>
+                           value="{{ patient_info.nom if patient_info else username }}" required readonly>
                 </div>
                 {% else %}
                 <!-- Pour les admins, permettre de choisir parmi les contacts -->
@@ -41,12 +41,16 @@
                 
                 <div class="form-group">
                     <label for="contact_email">Email</label>
-                    <input type="email" id="contact_email" name="contact_email">
+                    <input type="email" id="contact_email" name="contact_email" 
+                           value="{{ patient_info.email if patient_info else '' }}"
+                           {% if user_role == 'user' %}readonly{% endif %}>
                 </div>
                 
                 <div class="form-group">
                     <label for="contact_telephone">Téléphone</label>
-                    <input type="tel" id="contact_telephone" name="contact_telephone">
+                    <input type="tel" id="contact_telephone" name="contact_telephone"
+                           value="{{ patient_info.telephone if patient_info else '' }}"
+                           {% if user_role == 'user' %}readonly{% endif %}>
                 </div>
                 
                 <div class="form-group">
@@ -350,6 +354,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Rafraîchir automatiquement les créneaux toutes les 30 secondes si une date est sélectionnée
+    setInterval(function() {
+        const selectedDate = dateInput.value;
+        if (selectedDate && slotsContainer.style.display !== 'none') {
+            loadAvailableSlots(selectedDate);
+        }
+    }, 30000);
+    
     function loadAvailableSlots(date) {
         // Afficher le loader
         loadingDiv.style.display = 'block';
@@ -384,10 +396,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 slotBtn.className = 'time-slot';
                 slotBtn.textContent = slot;
                 
-                if (data.taken_slots.includes(slot)) {
-                    slotBtn.classList.add('taken');
-                    slotBtn.title = 'Créneau déjà réservé';
-                } else {
+                // Un créneau est disponible uniquement s'il est dans available_slots
+                if (data.available_slots.includes(slot)) {
                     slotBtn.classList.add('available');
                     slotBtn.title = 'Cliquez pour sélectionner';
                     slotBtn.addEventListener('click', function() {
@@ -403,6 +413,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         heureDebutInput.value = slot;
                         submitBtn.disabled = false;
                     });
+                } else {
+                    slotBtn.classList.add('taken');
+                    slotBtn.title = 'Créneau déjà réservé';
                 }
                 
                 timeSlotsDiv.appendChild(slotBtn);

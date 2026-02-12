@@ -223,17 +223,19 @@ Modifier un Contact - Cabinet Médical
             </div>
             {% endif %}
             
-            <hr style="margin: 30px 0;" id="medical-section-divider">
+            <hr style="margin: 30px 0;">
             
+            {% if categorie == 'Patient' %}
+            <!-- Section pour Patients -->
             <div id="medical-section">
-                <h3 id="medical-section-title">Informations Médicales (Optionnel)</h3>
+                <h3>🏥 Informations Médicales (Optionnel)</h3>
                 
-                <div class="form-group" id="field_date_naissance">
-                    <label for="date_naissance"><span id="label_date_naissance">🎂 Date de Naissance</span></label>
-                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                <div class="form-group">
+                    <label for="date_naissance">🎂 Date de Naissance</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
                 </div>
                 
-                <div class="form-group" id="field_groupe_sanguin">
+                <div class="form-group">
                     <label for="groupe_sanguin">🩸 Groupe Sanguin</label>
                     <select id="groupe_sanguin" name="groupe_sanguin">
                         <option value="">-- Sélectionner --</option>
@@ -248,29 +250,204 @@ Modifier un Contact - Cabinet Médical
                     </select>
                 </div>
                 
-                <div class="form-group" id="field_numero_secu">
-                    <label for="numero_secu"><span id="label_numero_secu">🔢 Numéro de Sécurité Sociale</span></label>
-                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50">
+                <div class="form-group">
+                    <label for="numero_secu">🔢 Numéro de Sécurité Sociale</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="15">
                 </div>
                 
-                <div class="form-group" id="field_allergies">
-                    <label for="allergies"><span id="label_allergies">⚠️ Allergies</span></label>
+                <div class="form-group">
+                    <label for="allergies">⚠️ Allergies</label>
                     <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Pénicilline, Arachides, etc.">{{ contact.allergies or '' }}</textarea>
                 </div>
                 
-                <div class="form-group" id="field_notes">
-                    <label for="notes"><span id="label_notes">📝 Notes Médicales</span></label>
+                <div class="form-group">
+                    <label for="notes">📝 Notes Médicales</label>
                     <textarea id="notes" name="notes" rows="4" placeholder="Informations médicales additionnelles...">{{ contact.notes or '' }}</textarea>
                 </div>
             </div>
             
-            <div id="notes-only-section" style="display: none;">
-                <h3>Notes (Optionnel)</h3>
+            {% elif categorie == 'Pharmacie' %}
+            <!-- Section pour Pharmacie -->
+            <div>
+                <h3>💊 Informations Spécifiques Pharmacie</h3>
+                
                 <div class="form-group">
-                    <label for="notes_general">📝 Notes</label>
-                    <textarea id="notes_general" name="notes" rows="4" placeholder="Informations additionnelles...">{{ contact.notes or '' }}</textarea>
+                    <label for="date_naissance">🕐 Horaires d'Ouverture</label>
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}" placeholder="Ex: Lun-Ven 8h-20h, Sam 9h-18h">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">📜 N° Licence/Agrément</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'autorisation officiel">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">💊 Services Disponibles</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires sur la pharmacie...">{{ contact.notes or '' }}</textarea>
                 </div>
             </div>
+            
+            {% elif categorie == 'Laboratoire' %}
+            <!-- Section pour Laboratoire -->
+            <div>
+                <h3>🔬 Informations Spécifiques Laboratoire</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">⏱️ Délai de Résultats</label>
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}" placeholder="Ex: 24h pour analyses standard, 48h pour biologie">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🏅 N° d'Accréditation</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'accréditation COFRAC ou équivalent">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🔬 Spécialités & Analyses</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations complémentaires, horaires, modalités de prélèvement...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            {% elif categorie == 'Assurance' %}
+            <!-- Section pour Assurance -->
+            <div>
+                <h3>🛡️ Informations Contrat & Couverture</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date d'Adhésion</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">📋 N° Police/Contrat</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro de contrat ou police d'assurance">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🛡️ Type de Couverture</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Garanties spécifiques, exclusions, procédures de remboursement...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            {% elif categorie == 'Fournisseur' %}
+            <!-- Section pour Fournisseur -->
+            <div>
+                <h3>📦 Informations Commerciales</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date de Début Collaboration</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🏢 N° RC/Identifiant Fiscal</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification fiscale">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">📦 Produits/Services Fournis</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Conditions de paiement, délais de livraison, tarifs négociés...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            {% elif categorie == 'Partenaire' %}
+            <!-- Section pour Partenaire -->
+            <div>
+                <h3>🤝 Informations Partenariat</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date de Début Partenariat</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">📜 N° Convention/Accord</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Référence de la convention ou accord">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🤝 Type de Partenariat</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Référencement mutuel, Co-marketing, Échange de services, R&D">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Termes du partenariat, objectifs communs, engagements...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            {% elif categorie in ['Entreprise', 'Client'] %}
+            <!-- Section pour Entreprise/Client -->
+            <div>
+                <h3>🏢 Informations Commerciales</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date de Début Relation</label>
+                    <input type="date" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🏢 N° SIRET/Client</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50" placeholder="Numéro d'identification">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">🏭 Secteur d'Activité</label>
+                    <textarea id="allergies" name="allergies" rows="3" placeholder="Ex: Santé, Technologie, Commerce, Services, Industrie">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Besoins spécifiques, historique des transactions, préférences...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            
+            {% else %}
+            <!-- Section par défaut -->
+            <div>
+                <h3>📋 Informations Complémentaires</h3>
+                
+                <div class="form-group">
+                    <label for="date_naissance">📅 Date</label>
+                    <input type="text" id="date_naissance" name="date_naissance" value="{{ contact.date_naissance or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="numero_secu">🔢 Numéro/ID</label>
+                    <input type="text" id="numero_secu" name="numero_secu" value="{{ contact.numero_secu or '' }}" maxlength="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="allergies">📌 Détails</label>
+                    <textarea id="allergies" name="allergies" rows="3">{{ contact.allergies or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes">📝 Notes</label>
+                    <textarea id="notes" name="notes" rows="4" placeholder="Informations additionnelles...">{{ contact.notes or '' }}</textarea>
+                </div>
+            </div>
+            {% endif %}
             
             <div class="form-actions">
                 <button type="submit" class="btn btn-success">✓ Enregistrer les Modifications</button>
@@ -283,9 +460,7 @@ Modifier un Contact - Cabinet Médical
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const categorieSelect = document.getElementById('categorie');
-    const medicalSection = document.getElementById('medical-section');
-    const medicalDivider = document.getElementById('medical-section-divider');
-    const notesOnlySection = document.getElementById('notes-only-section');
+    // Note: Les sections médicales/commerciales sont maintenant gérées côté serveur
     
     // Fonction pour mettre à jour les labels selon la catégorie
     function updateLabels(categorie) {
@@ -386,160 +561,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Fonction pour réutiliser intelligemment les champs selon la catégorie
-    function updateFieldsForCategory(categorie) {
-        if (!categorieSelect) return;
-        
-        const medicalSectionTitle = document.getElementById('medical-section-title');
-        const labelDateNaissance = document.getElementById('label_date_naissance');
-        const labelNumeroSecu = document.getElementById('label_numero_secu');
-        const labelAllergies = document.getElementById('label_allergies');
-        const labelNotes = document.getElementById('label_notes');
-        
-        const inputDateNaissance = document.getElementById('date_naissance');
-        const inputNumeroSecu = document.getElementById('numero_secu');
-        const textareaAllergies = document.getElementById('allergies');
-        const textareaNotes = document.getElementById('notes');
-        
-        const fieldGroupeSanguin = document.getElementById('field_groupe_sanguin');
-        
-        // Masquer toujours le groupe sanguin pour les non-patients
-        if (categorie !== 'Patient') {
-            fieldGroupeSanguin.style.display = 'none';
-        } else {
-            fieldGroupeSanguin.style.display = 'block';
-        }
-        
-        switch(categorie) {
-            case 'Patient':
-                medicalSectionTitle.textContent = 'Informations Médicales (Optionnel)';
-                labelDateNaissance.innerHTML = '🎂 Date de Naissance';
-                inputDateNaissance.type = 'date';
-                inputDateNaissance.placeholder = '';
-                labelNumeroSecu.innerHTML = '🔢 Numéro de Sécurité Sociale';
-                inputNumeroSecu.placeholder = '';
-                inputNumeroSecu.maxLength = 15;
-                labelAllergies.innerHTML = '⚠️ Allergies';
-                textareaAllergies.placeholder = 'Ex: Pénicilline, Arachides, etc.';
-                labelNotes.innerHTML = '📝 Notes Médicales';
-                textareaNotes.placeholder = 'Informations médicales additionnelles...';
-                break;
-                
-            case 'Pharmacie':
-                medicalSectionTitle.textContent = 'Informations Spécifiques Pharmacie';
-                labelDateNaissance.innerHTML = '🕐 Horaires d\'Ouverture';
-                inputDateNaissance.type = 'text';
-                inputDateNaissance.placeholder = 'Ex: Lun-Ven 8h-20h, Sam 9h-18h';
-                labelNumeroSecu.innerHTML = '📜 N° Licence/Agrément';
-                inputNumeroSecu.placeholder = 'Numéro d\'autorisation officiel';
-                inputNumeroSecu.maxLength = 50;
-                labelAllergies.innerHTML = '💊 Services Disponibles';
-                textareaAllergies.placeholder = 'Ex: Garde 24h, Orthopédie, Homéopathie, Matériel médical';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Informations complémentaires sur la pharmacie...';
-                break;
-                
-            case 'Laboratoire':
-                medicalSectionTitle.textContent = 'Informations Spécifiques Laboratoire';
-                labelDateNaissance.innerHTML = '⏱️ Délai de Résultats';
-                inputDateNaissance.type = 'text';
-                inputDateNaissance.placeholder = 'Ex: 24h pour analyses standard, 48h pour biologie';
-                labelNumeroSecu.innerHTML = '🏅 N° d\'Accréditation';
-                inputNumeroSecu.placeholder = 'Numéro d\'accréditation COFRAC ou équivalent';
-                inputNumeroSecu.maxLength = 50;
-                labelAllergies.innerHTML = '🔬 Spécialités & Analyses';
-                textareaAllergies.placeholder = 'Ex: Biochimie, Hématologie, Microbiologie, PCR, Imagerie médicale';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Informations complémentaires, horaires, modalités de prélèvement...';
-                break;
-                
-            case 'Assurance':
-                medicalSectionTitle.textContent = 'Informations Contrat & Couverture';
-                labelDateNaissance.innerHTML = '📅 Date d\'Adhésion';
-                inputDateNaissance.type = 'date';
-                inputDateNaissance.placeholder = '';
-                labelNumeroSecu.innerHTML = '📋 N° Police/Contrat';
-                inputNumeroSecu.placeholder = 'Numéro de contrat ou police d\'assurance';
-                inputNumeroSecu.maxLength = 50;
-                labelAllergies.innerHTML = '🛡️ Type de Couverture';
-                textareaAllergies.placeholder = 'Ex: Hospitalisation, Soins ambulatoires, Dentaire, Optique, Médicaments (taux %)';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Garanties spécifiques, exclusions, procédures de remboursement...';
-                break;
-                
-            case 'Fournisseur':
-                medicalSectionTitle.textContent = 'Informations Commerciales';
-                labelDateNaissance.innerHTML = '📅 Date de Début Collaboration';
-                inputDateNaissance.type = 'date';
-                inputDateNaissance.placeholder = '';
-                labelNumeroSecu.innerHTML = '🏢 N° SIRET/RC';
-                inputNumeroSecu.placeholder = 'Numéro d\'identification fiscale';
-                inputNumeroSecu.maxLength = 50;
-                labelAllergies.innerHTML = '📦 Produits/Services Fournis';
-                textareaAllergies.placeholder = 'Ex: Médicaments, Matériel médical, Fournitures bureau, Équipements';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Conditions de paiement, délais de livraison, tarifs négociés...';
-                break;
-                
-            case 'Partenaire':
-                medicalSectionTitle.textContent = 'Informations Partenariat';
-                labelDateNaissance.innerHTML = '📅 Date de Début Partenariat';
-                inputDateNaissance.type = 'date';
-                inputDateNaissance.placeholder = '';
-                labelNumeroSecu.innerHTML = '📜 N° Convention/Accord';
-                inputNumeroSecu.placeholder = 'Référence de la convention ou accord';
-                inputNumeroSecu.maxLength = 50;
-                labelAllergies.innerHTML = '🤝 Type de Partenariat';
-                textareaAllergies.placeholder = 'Ex: Référencement mutuel, Co-marketing, Échange de services, R&D';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Termes du partenariat, objectifs communs, engagements...';
-                break;
-                
-            case 'Entreprise':
-            case 'Client':
-                medicalSectionTitle.textContent = 'Informations Commerciales';
-                labelDateNaissance.innerHTML = '📅 Date de Début Relation';
-                inputDateNaissance.type = 'date';
-                inputDateNaissance.placeholder = '';
-                labelNumeroSecu.innerHTML = '🏢 N° SIRET/Client';
-                inputNumeroSecu.placeholder = 'Numéro d\'identification';
-                inputNumeroSecu.maxLength = 50;
-                labelAllergies.innerHTML = '🏭 Secteur d\'Activité';
-                textareaAllergies.placeholder = 'Ex: Santé, Technologie, Commerce, Services, Industrie';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Besoins spécifiques, historique des transactions, préférences...';
-                break;
-                
-            default:
-                medicalSectionTitle.textContent = 'Informations Complémentaires';
-                labelNotes.innerHTML = '📝 Notes';
-                textareaNotes.placeholder = 'Informations additionnelles...';
-        }
-    }
+    // Note: Les champs spécifiques à chaque catégorie sont maintenant gérés côté serveur
+    // Cette fonction n'est plus nécessaire pour la section médicale/commerciale
     
-    // Fonction pour afficher/masquer les sections selon la catégorie
+    // Fonction pour mettre à jour les labels selon la catégorie (pour admin uniquement)
     function updateSectionsVisibility() {
         if (!categorieSelect) return; // Si USER (champs en lecture seule)
         
         const categorie = categorieSelect.value;
         
-        // Mettre à jour les labels
+        // Mettre à jour les labels de la section professionnelle
         updateLabels(categorie);
         
-        // Mettre à jour les champs selon la catégorie
-        updateFieldsForCategory(categorie);
-        
-        if (categorie === 'Patient') {
-            // Patient: Afficher toutes les informations médicales
-            medicalSection.style.display = 'block';
-            medicalDivider.style.display = 'block';
-            notesOnlySection.style.display = 'none';
-        } else {
-            // Autres catégories: Afficher la section médicale avec les champs réutilisés
-            medicalSection.style.display = 'block';
-            medicalDivider.style.display = 'block';
-            notesOnlySection.style.display = 'none';
-        }
+        // Note: Les champs spécifiques sont maintenant gérés côté serveur
+        // L'admin doit enregistrer pour voir les changements de section
     }
     
     // Initialiser au chargement de la page

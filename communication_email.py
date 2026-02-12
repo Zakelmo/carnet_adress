@@ -3,11 +3,13 @@ Module de communication par email pour le cabinet médical
 Permet l'envoi d'emails aux patients avec templates et historique
 """
 
+import os
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
+from email.utils import formataddr
 from datetime import datetime
 import sqlite3
 from config import Config
@@ -34,18 +36,94 @@ class EmailService:
         
     def verifier_configuration(self):
         """
-        Vérifie si la configuration email est complète (mode simulation - toujours OK)
+        Vérifie si la configuration email est complète
         
         Returns:
             tuple: (bool, str) - (configuré, message)
         """
-        # Mode simulation: toujours configuré
-        return True, "Configuration email OK (mode simulation)"
+        if not self.smtp_username or not self.smtp_password:
+            return False, "Configuration email incomplète: SMTP_USERNAME et SMTP_PASSWORD requis"
+        if not self.smtp_server:
+            return False, "Configuration email incomplète: SMTP_SERVER requis"
+        return True, "Configuration email OK"
+    
+    def _envoyer_email_smtp(self, destinataire_email, sujet, corps_html, corps_texte=None, pieces_jointes=None):
+        """
+        Envoie réellement un email via SMTP
+        
+        Args:
+            destinataire_email (str): Email du destinataire
+            sujet (str): Sujet de l'email
+            corps_html (str): Corps HTML du message
+            corps_texte (str): Corps texte du message (optionnel)
+            pieces_jointes (list): Liste de chemins de fichiers à joindre
+        
+        Returns:
+            tuple: (bool, str) - (succès, message)
+        """
+        try:
+            # Vérifier la configuration
+            config_ok, config_msg = self.verifier_configuration()
+            if not config_ok:
+                return False, config_msg
+            
+            # Créer le message
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = sujet
+            msg['From'] = formataddr((self.sender_name, self.sender_email))
+            msg['To'] = destinataire_email
+            
+            # Ajouter le corps texte (pour les clients qui ne supportent pas HTML)
+            if corps_texte:
+                msg.attach(MIMEText(corps_texte, 'plain', 'utf-8'))
+            
+            # Ajouter le corps HTML
+            if corps_html:
+                msg.attach(MIMEText(corps_html, 'html', 'utf-8'))
+            
+            # Ajouter les pièces jointes
+            if pieces_jointes:
+                for fichier in pieces_jointes:
+                    if os.path.exists(fichier):
+                        with open(fichier, 'rb') as f:
+                            part = MIMEBase('application', 'octet-stream')
+                            part.set_payload(f.read())
+                        encoders.encode_base64(part)
+                        part.add_header(
+                            'Content-Disposition',
+                            f'attachment; filename={os.path.basename(fichier)}'
+                        )
+                        msg.attach(part)
+            
+            # Connexion au serveur SMTP et envoi
+            if self.smtp_use_tls:
+                server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+                server.starttls()
+            else:
+                # SSL direct (port 465)
+                server = smtplib.SMTP_SSL(self.smtp_server, self.smtp_port)
+            
+            server.login(self.smtp_username, self.smtp_password)
+            server.send_message(msg)
+            server.quit()
+            
+            return True, "Email envoyé avec succès"
+            
+        except smtplib.SMTPAuthenticationError as e:
+            return False, f"Erreur d'authentification SMTP: Vérifiez vos identifiants ({str(e)})"
+        except smtplib.SMTPConnectError as e:
+            return False, f"Erreur de connexion au serveur SMTP: {str(e)}"
+        except smtplib.SMTPRecipientsRefused as e:
+            return False, f"Destinataire refusé: {str(e)}"
+        except smtplib.SMTPException as e:
+            return False, f"Erreur SMTP: {str(e)}"
+        except Exception as e:
+            return False, f"Erreur lors de l'envoi de l'email: {str(e)}"
     
     def envoyer_email(self, destinataire_email, destinataire_nom, sujet, corps, 
-                      pieces_jointes=None, sent_by=None, contact_nom=None):
+                      pieces_jointes=None, sent_by=None, contact_nom=None, is_html=False):
         """
-        SIMULATION - Envoie un email à un destinataire (mode simulation)
+        Envoie un email à un destinataire (mode réel ou simulation)
         
         Args:
             destinataire_email (str): Email du destinataire
@@ -55,27 +133,56 @@ class EmailService:
             pieces_jointes (list): Liste de chemins de fichiers à joindre
             sent_by (str): Nom d'utilisateur de l'expéditeur
             contact_nom (str): Nom du contact pour l'historique
+            is_html (bool): Si True, le corps est en HTML
         
         Returns:
             tuple: (bool, str) - (succès, message)
         """
-        # SIMULATION: Pas d'envoi réel, juste enregistrement dans l'historique
+        # Vérifier si on est en mode simulation ou réel
+        config_ok, _ = self.verifier_configuration()
+        
+        if config_ok:
+            # Mode réel: envoyer l'email via SMTP
+            if is_html:
+                corps_html = corps
+                # Créer une version texte simple (enlever les balises HTML basiques)
+                import re
+                corps_texte = re.sub('<[^<]+?>', '', corps)
+            else:
+                corps_html = f"<html><body><pre>{corps}</pre></body></html>"
+                corps_texte = corps
+            
+            succes, message = self._envoyer_email_smtp(
+                destinataire_email, sujet, corps_html, corps_texte, pieces_jointes
+            )
+            
+            statut = 'envoyé' if succes else 'échec'
+        else:
+            # Mode simulation: enregistrer seulement dans l'historique
+            succes = True  # En mode simulation, on considère que c'est OK
+            message = f"Mode simulation: Email simulé pour {destinataire_nom} ({destinataire_email})"
+            statut = 'simulé'
+        
+        # Enregistrer dans l'historique
         try:
-            # Enregistrer dans l'historique
             self._enregistrer_communication(
                 contact_nom=contact_nom or destinataire_nom,
                 type_communication='email',
                 destinataire=destinataire_email,
                 sujet=sujet,
                 message=corps,
-                statut='envoyé',
+                statut=statut,
                 sent_by=sent_by
             )
-            
-            return True, f"✅ Email envoyé avec succès à {destinataire_nom} ({destinataire_email})"
-            
         except Exception as e:
-            return False, f"Erreur lors de la simulation: {str(e)}"
+            print(f"⚠ Erreur lors de l'enregistrement de la communication: {e}")
+        
+        if config_ok and statut == 'envoyé':
+            return True, f"✅ Email envoyé avec succès à {destinataire_nom} ({destinataire_email})"
+        elif statut == 'simulé':
+            return True, f"ℹ️ {message}\n💡 Configurez SMTP_USERNAME et SMTP_PASSWORD dans .env pour l'envoi réel"
+        else:
+            return False, message
     
     def envoyer_email_template(self, destinataire_email, destinataire_nom, 
                                template_name, variables=None, sent_by=None, 
