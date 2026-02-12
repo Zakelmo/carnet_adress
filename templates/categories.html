@@ -45,7 +45,60 @@
             </div>
         </div>
 
-        {% if cat_name == 'Patient' %}
+        {% if cat_name == 'Délégué Médical' %}
+        <!-- Actions spéciales pour les délégués médicaux -->
+        <div style="background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #17a2b8;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h4 style="margin: 0 0 5px 0; color: #0c5460;">📅 Réservation de créneaux</h4>
+                    <p style="margin: 0; color: #0c5460; font-size: 14px;">Réservez plusieurs créneaux pour plusieurs délégués en une seule action</p>
+                </div>
+                <a href="{{ url_for('delegues_bulk_book_slots') }}" class="btn" style="background: #17a2b8; color: white; padding: 12px 25px; border-radius: 6px; text-decoration: none; font-weight: 600; white-space: nowrap;">
+                    👨‍⚕️ Réserver des créneaux
+                </a>
+            </div>
+        </div>
+        
+        <!-- Vue spéciale pour les délégués médicaux -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px;">
+            {% for contact in contacts %}
+            <div style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%); padding: 20px; border-radius: 10px; border: 2px solid #17a2b8;">
+                <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                    <div style="font-size: 2em; margin-right: 10px;">👨‍⚕️</div>
+                    <div>
+                        <h3 style="margin: 0; color: #0c5460;">
+                            <a href="{{ url_for('edit_contact', nom=contact.nom) }}" style="color: #0c5460; text-decoration: none;">
+                                {{ contact.nom }}
+                            </a>
+                        </h3>
+                        {% if contact.entreprise %}
+                        <span style="color: #17a2b8; font-size: 13px; font-weight: 500;">{{ contact.entreprise }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <p style="margin: 5px 0; color: #0c5460; font-size: 14px;">
+                    📧 {{ contact.email }}<br>
+                    📱 {{ contact.telephone }}<br>
+                    {% if contact.ville %}
+                    🏙️ {{ contact.ville }}<br>
+                    {% endif %}
+                    {% if contact.titre_poste %}
+                    💼 {{ contact.titre_poste }}
+                    {% endif %}
+                </p>
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #81d4fa; display: flex; gap: 10px;">
+                    <a href="{{ url_for('send_email', nom=contact.nom) }}" class="btn" style="background: #17a2b8; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9em;">
+                        📧 Contacter
+                    </a>
+                    <a href="{{ url_for('book_appointment') }}" class="btn" style="background: #28a745; color: white; padding: 8px 15px; border-radius: 5px; text-decoration: none; font-size: 0.9em;">
+                        📅 RDV
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% elif cat_name == 'Patient' %}
         <!-- Vue spéciale pour les patients -->
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
             {% for contact in contacts %}

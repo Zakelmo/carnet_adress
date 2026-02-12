@@ -17,6 +17,7 @@
                 <label for="categorie">📁 Catégorie *</label>
                 <select id="categorie" name="categorie" required onchange="updateFormFields()">
                     <option value="Patient" selected>👤 Patient</option>
+                    <option value="Délégué Médical">👨‍⚕️ Délégué Médical</option>
                     <option value="Pharmacie">💊 Pharmacie</option>
                     <option value="Laboratoire">🔬 Laboratoire</option>
                     <option value="Assurance">🛡️ Assurance</option>
@@ -176,6 +177,47 @@ function updateFormFields() {
             labelTitrePoste.innerHTML = '💼 Profession';
             labelEntreprise.innerHTML = '🏢 Employeur';
             notesField.placeholder = 'Notes médicales, antécédents, traitements en cours...';
+            break;
+            
+        case 'Délégué Médical':
+            categoryHelp.textContent = '👨‍⚕️ Délégué médical représentant des laboratoires pharmaceutiques';
+            nomLabel.innerHTML = '👨‍⚕️ Nom du Délégué';
+            document.getElementById('nom').placeholder = 'Ex: Jean Dupont';
+            titlePro.textContent = 'Informations Professionnelles';
+            labelTitrePoste.innerHTML = '💼 Fonction';
+            labelEntreprise.innerHTML = '💊 Laboratoire / Entreprise';
+            document.getElementById('titre_poste').placeholder = 'Ex: Délégué Régional, Représentant';
+            document.getElementById('entreprise').placeholder = 'Ex: Sanofi, Pfizer, Bayer';
+            
+            // Réutilisation intelligente des champs
+            titleMedical.textContent = 'Informations Professionnelles';
+            sectionMedical.style.display = 'block';
+            
+            // Masquer groupe sanguin
+            document.getElementById('field_groupe_sanguin').style.display = 'none';
+            
+            // Réutiliser date_naissance → Date de visite habituelle
+            document.getElementById('field_date_naissance').style.display = 'block';
+            document.getElementById('label_date_naissance').innerHTML = '📅 Jour de visite habituel';
+            document.getElementById('date_naissance').type = 'text';
+            document.getElementById('date_naissance').placeholder = 'Ex: Lundi, Mardi matin...';
+            
+            // Réutiliser numero_secu → N° d\'immatriculation
+            document.getElementById('field_numero_secu').style.display = 'block';
+            document.getElementById('label_numero_secu').innerHTML = '📋 N° Immatriculation';
+            document.getElementById('numero_secu').placeholder = 'Numéro d\'identification professionnelle';
+            
+            // Réutiliser allergies → Spécialités médicales
+            document.getElementById('field_allergies').style.display = 'block';
+            document.getElementById('label_allergies').innerHTML = '💊 Spécialités / Produits';
+            document.getElementById('allergies').placeholder = 'Ex: Cardiologie, Diabète, Vaccins, Médicaments génériques';
+            
+            // Notes
+            document.getElementById('field_notes').style.display = 'block';
+            document.getElementById('label_notes').innerHTML = '📝 Notes';
+            notesField.placeholder = 'Zones de couverture, fréquence de visite, contacts privilégiés...';
+            
+            submitBtn.innerHTML = '✓ Ajouter le Délégué Médical';
             break;
             
         case 'Pharmacie':

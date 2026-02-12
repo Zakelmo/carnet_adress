@@ -451,6 +451,7 @@ def categories():
     # Définir les icônes et couleurs pour chaque catégorie
     category_info = {
         'Patient': {'icon': '👤', 'color': '#667eea'},
+        'Délégué Médical': {'icon': '👨‍⚕️', 'color': '#17a2b8'},
         'Pharmacie': {'icon': '💊', 'color': '#28a745'},
         'Fournisseur': {'icon': '📦', 'color': '#fd7e14'},
         'Partenaire': {'icon': '🤜', 'color': '#6f42c1'},
@@ -639,6 +640,135 @@ def delete_user(target_username):
 
 
 # ============= ROUTES SUPER ADMIN =============
+
+@app.route('/delegues/bulk_book_slots', methods=['GET', 'POST'])
+@role_required(Role.ADMIN, Role.SUPER_ADMIN)
+def delegues_bulk_book_slots():
+    """Réservation en masse de créneaux pour les Délégués Médicaux"""
+    username = session['username']
+    user_role = session.get('role', Role.USER)
+    
+    if request.method == 'POST':
+        # Récupérer les données du formulaire
+        contact_ids = request.form.getlist('contacts[]')
+        date_rdv = request.form.get('date_rdv')
+        slot_ids = request.form.getlist('slots[]')  # Plusieurs créneaux possibles
+        motif = request.form.get('motif', 'Visite Délégué Médical')
+        notes = request.form.get('notes', '')
+        
+        if not contact_ids:
+            flash('Veuillez sélectionner au moins un délégué médical!', 'error')
+            return redirect(url_for('delegues_bulk_book_slots'))
+        
+        if not date_rdv:
+            flash('Veuillez sélectionner une date!', 'error')
+            return redirect(url_for('delegues_bulk_book_slots'))
+        
+        if not slot_ids:
+            flash('Veuillez sélectionner au moins un créneau horaire!', 'error')
+            return redirect(url_for('delegues_bulk_book_slots'))
+        
+        # Validation de la date (ne pas permettre les RDV dans le passé)
+        from datetime import datetime, timedelta, date
+        try:
+            rdv_date = datetime.strptime(date_rdv, '%Y-%m-%d').date()
+            today = date.today()
+            if rdv_date < today:
+                flash('Impossible de réserver un rendez-vous dans le passé!', 'error')
+                return redirect(url_for('delegues_bulk_book_slots'))
+        except ValueError:
+            flash('Format de date invalide!', 'error')
+            return redirect(url_for('delegues_bulk_book_slots'))
+        
+        # Récupérer les informations des contacts sélectionnés
+        carnet = AddressBook(username=username)
+        selected_contacts = []
+        for contact_nom in contact_ids:
+            contact = carnet.rechercher_contact(contact_nom)
+            if contact and contact.categorie == 'Délégué Médical':
+                selected_contacts.append(contact)
+        
+        if not selected_contacts:
+            flash('Aucun délégué médical valide sélectionné!', 'error')
+            return redirect(url_for('delegues_bulk_book_slots'))
+        
+        # Créer les rendez-vous pour chaque contact et chaque créneau
+        conn = sqlite3.connect('contacts.db')
+        cursor = conn.cursor()
+        
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        for contact in selected_contacts:
+            for slot in slot_ids:
+                try:
+                    # Calculer l'heure de fin (30 minutes après)
+                    debut = datetime.strptime(slot, '%H:%M')
+                    fin = debut + timedelta(minutes=30)
+                    heure_fin = fin.strftime('%H:%M')
+                    
+                    # Vérifier les heures d'ouverture (8h00 - 18h00)
+                    if debut.hour < 8 or debut.hour >= 18:
+                        error_count += 1
+                        errors.append(f"{contact.nom} à {slot}: Hors horaires d'ouverture")
+                        continue
+                    
+                    # Vérifier si le créneau est déjà pris (chevauchement)
+                    cursor.execute("""
+                        SELECT id, heure_debut, heure_fin FROM appointments 
+                        WHERE date_rdv = ? 
+                        AND statut != 'annulé'
+                        AND heure_debut < ? 
+                        AND heure_fin > ?
+                    """, (date_rdv, heure_fin, slot))
+                    
+                    conflict = cursor.fetchone()
+                    if conflict:
+                        error_count += 1
+                        errors.append(f"{contact.nom} à {slot}: Créneau déjà occupé")
+                        continue
+                    
+                    # Créer le rendez-vous
+                    cursor.execute("""
+                        INSERT INTO appointments 
+                        (contact_nom, contact_email, contact_telephone, date_rdv, 
+                         heure_debut, heure_fin, motif, notes, statut, created_by, created_for)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'confirmé', ?, ?)
+                    """, (contact.nom, contact.email, contact.telephone, date_rdv,
+                          slot, heure_fin, motif, notes, username, contact.nom))
+                    
+                    success_count += 1
+                    
+                except Exception as e:
+                    error_count += 1
+                    errors.append(f"{contact.nom} à {slot}: {str(e)}")
+        
+        conn.commit()
+        conn.close()
+        
+        # Envoyer un résumé
+        if success_count > 0:
+            flash(f'✅ {success_count} rendez-vous créés avec succès!', 'success')
+        
+        if error_count > 0:
+            flash(f'⚠️ {error_count} erreurs lors de la création.', 'warning')
+            for error in errors[:5]:  # Limiter à 5 erreurs affichées
+                flash(f'  - {error}', 'warning')
+        
+        return redirect(url_for('appointments'))
+    
+    # GET: Afficher le formulaire avec les délégués médicaux
+    carnet = AddressBook(username=username)
+    
+    # Filtrer uniquement les délégués médicaux
+    delegues = [c for c in carnet.contacts if c.categorie == 'Délégué Médical']
+    
+    return render_template('delegues_bulk_book.html',
+                         delegues=delegues,
+                         username=username,
+                         user_role=user_role)
+
 
 @app.route('/superadmin')
 @role_required(Role.SUPER_ADMIN)
